@@ -189,18 +189,24 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
   0%, 100% { box-shadow: 0 4px 18px rgba(80, 60, 30, 0.2); }
   50% { box-shadow: 0 4px 18px rgba(80, 60, 30, 0.2), 0 0 0 16px rgba(168, 118, 62, 0.1); }
 }
+#blad-titel {
+  font-size: 21px; font-weight: 700; letter-spacing: -0.2px;
+  color: var(--inkt); text-align: center; margin-bottom: 12px;
+  max-width: 300px;
+}
 #blad-quote {
-  font-family: var(--serif); font-size: 21px; line-height: 1.65;
-  font-style: italic; color: #4A4030; text-align: center; max-width: 300px;
-  overflow-y: auto; max-height: 34dvh;
+  font-family: var(--serif); font-size: 17px; line-height: 1.65;
+  font-style: italic; color: #5A4E3C; text-align: center; max-width: 300px;
+  overflow-y: auto; max-height: 26dvh;
+  scrollbar-width: none;
 }
-#blad-meta { margin-top: 18px; font-size: 12.5px; color: var(--inkt-vaag); display: flex; align-items: center; gap: 7px; }
-.blad-cat {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  display: inline-flex; align-items: center; justify-content: center;
+#blad-quote::-webkit-scrollbar { display: none; }
+#blad-quote.scrollt {
+  -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
 }
-.blad-cat .icon { width: 12px; height: 12px; }
+#blad-meta { margin-top: 18px; font-size: 12.5px; color: var(--inkt-vaag); display: flex; align-items: center; gap: 6px; }
+.meta-merk { width: 14px; height: 14px; fill: currentColor; }
 .blad-audio {
   display: flex; align-items: center; gap: 10px;
   width: 210px; margin-top: 16px;
@@ -375,17 +381,18 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
 }
 .veld-tekst::placeholder { color: var(--inkt-vaag); }
 
-/* Categorie: vier gekleurde iconen */
-.cat-rond { display: flex; gap: 16px; justify-content: center; margin: 16px 0 4px; }
-.cat-knop {
-  width: 52px; height: 52px; border-radius: 50%;
-  background: color-mix(in srgb, var(--accent) 14%, #fff);
-  color: var(--accent);
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.18s ease;
+/* Categorie: merkteken + naam, in de inkt van de wereld —
+   kleur blijft van de seizoenen (en goud van favorieten) */
+.cat-wrap { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 16px 0 2px; }
+.cat-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 15px; border-radius: 100px;
+  border: 1.5px solid var(--lijn); background: #fff;
+  font-size: 13.5px; font-weight: 600; color: var(--inkt-zacht);
+  transition: all 0.16s ease;
 }
-.cat-knop .icon { width: 22px; height: 22px; }
-.cat-knop.active { background: var(--accent); color: #fff; transform: scale(1.12); box-shadow: 0 5px 14px color-mix(in srgb, var(--accent) 40%, transparent); }
+.cat-chip .icon { width: 15px; height: 15px; }
+.cat-chip.active { background: var(--inkt); border-color: var(--inkt); color: #FDF8EE; }
 
 /* Datum: één stil chipje, geen formulierveld */
 .datum-rij { display: flex; justify-content: center; margin: 12px 0 2px; }

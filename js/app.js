@@ -14,6 +14,10 @@
   const fmtDate = (iso) => { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
   const svg = (id, cls = 'icon') => `<svg class="${cls}"><use href="#${id}"/></svg>`;
   const CAT_ICONS = { quote: 'i-quote', question: 'i-question', leaf: 'i-leafcat', flag: 'i-flag' };
+  // Merktekens: monochrome lijniconen — kleur is in deze wereld van de
+  // seizoenen (en goud van favorieten), categorieën hebben een teken + naam
+  const CAT_MERKEN = { quote: 'i-bubbel', question: 'i-question', leaf: 'i-wereld', flag: 'i-flag' };
+  const catMerk = (cat) => CAT_MERKEN[cat?.icon] || 'i-wereld';
 
   function toast(msg, ms = 2600) {
     const t = $('#toast');
@@ -276,14 +280,20 @@
            <path class="spark" style="--sd:3.8s" d="M196,132 l1.2,3 3,1.2 -3,1.2 -1.2,3 -1.2,-3 -3,-1.2 3,-1.2 Z" fill="#FFF3C4"/>` : ''}
        </svg>
        ${mem.audioId ? `<button id="blad-play" class="pulse" aria-label="Afspelen">${svg('i-play')}</button>` : ''}`;
-    $('#blad-quote').textContent = mem.text ? `“${mem.text}”` : `“${mem.title}”`;
+    $('#blad-titel').textContent = mem.title || '';
+    const quoteEl = $('#blad-quote');
+    quoteEl.textContent = mem.text ? `“${mem.text}”` : '';
+    quoteEl.hidden = !mem.text;
+    quoteEl.scrollTop = 0;
+    // Zachte fade onderaan alléén als er meer tekst is dan past
+    requestAnimationFrame(() => quoteEl.classList.toggle('scrollt', quoteEl.scrollHeight > quoteEl.clientHeight + 4));
     const child = activeChild();
     const age = ageAt(child, mem.date);
     const cat = catById(mem.categoryId) || {};
     $('#blad-meta').innerHTML =
-      `<span class="blad-cat" style="--accent:${cat.color || '#A6957A'}" title="${esc(cat.name || '')}">${svg(CAT_ICONS[cat.icon] || 'i-leafcat')}</span>` +
-      `${new Date(mem.date).getDate()} ${MONTHS[new Date(mem.date).getMonth()]} ${new Date(mem.date).getFullYear()}` +
-      (age !== null ? ` · ${esc(child.name)} was ${Math.max(0, age)}` : '');
+      `${svg(catMerk(cat), 'meta-merk')}<span>${esc((cat.name || '').toLowerCase())}</span><span>·</span>` +
+      `<span>${new Date(mem.date).getDate()} ${MONTHS[new Date(mem.date).getMonth()]} ${new Date(mem.date).getFullYear()}</span>` +
+      (age !== null ? `<span>·</span><span>${esc(child.name)} was ${Math.max(0, age)}</span>` : '');
     $('#blad-audio').hidden = !mem.audioId;
     if (mem.audioId) {
       $('#blad-progress').style.width = '0%';
@@ -534,22 +544,22 @@
   }
   $('#sheet-backdrop').addEventListener('click', () => { if (!sheetLocked) closeSheet(); });
 
-  /* Categorie kiezen: vier gekleurde iconen, geen woorden */
+  /* Categorie kiezen: merkteken + naam, rustig in de inkt van de wereld */
   function catSelectHTML(selectedId) {
-    return `<div class="cat-rond" id="cat-select">
+    return `<div class="cat-wrap" id="cat-select">
       ${S.categories.map(c => `
-        <button type="button" class="cat-knop ${c.id === selectedId ? 'active' : ''}" data-cat="${c.id}" style="--accent:${c.color}" aria-label="${esc(c.name)}">
-          ${svg(CAT_ICONS[c.icon] || 'i-leafcat')}
+        <button type="button" class="cat-chip ${c.id === selectedId ? 'active' : ''}" data-cat="${c.id}">
+          ${svg(catMerk(c))}${esc(c.name)}
         </button>`).join('')}
     </div>`;
   }
   function bindCatSelect() {
-    $('#cat-select').querySelectorAll('.cat-knop').forEach(b => b.addEventListener('click', () => {
-      $('#cat-select').querySelectorAll('.cat-knop').forEach(x => x.classList.remove('active'));
+    $('#cat-select').querySelectorAll('.cat-chip').forEach(b => b.addEventListener('click', () => {
+      $('#cat-select').querySelectorAll('.cat-chip').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
     }));
   }
-  const selectedCat = () => $('#cat-select .cat-knop.active')?.dataset.cat || S.categories[0]?.id;
+  const selectedCat = () => $('#cat-select .cat-chip.active')?.dataset.cat || S.categories[0]?.id;
 
   function childSelectHTML(selectedId) {
     if (S.children.length < 2) return '';
@@ -818,9 +828,9 @@
     openSheet(`
       <h2 class="sheet-title">Zoeken</h2>
       <div class="field"><input type="text" id="zoek-input" placeholder="Zoek in momentjes…" autocomplete="off"></div>
-      <div class="chip-row" id="zoek-chips" style="margin-bottom:14px">
-        ${S.categories.map(c => `<button class="filter-chip" data-cat="${c.id}" style="--accent:${c.color}">${esc(c.name)}</button>`).join('')}
-        <button class="filter-chip" data-fav style="--accent:#F2CC5E">Goud</button>
+      <div class="cat-wrap" id="zoek-chips" style="justify-content:flex-start;margin:0 0 14px">
+        ${S.categories.map(c => `<button class="cat-chip" data-cat="${c.id}">${svg(catMerk(c))}${esc(c.name)}</button>`).join('')}
+        <button class="filter-chip" data-fav style="--accent:#D9AF3B">Goud</button>
       </div>
       <div id="zoek-uit"></div>
     `);
@@ -939,7 +949,7 @@
         <p class="settings-label">Over</p>
         <div class="settings-card">
           <div class="settings-row" style="cursor:default">
-            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.1 · elk blaadje één herinnering</span></span>
+            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.2 · elk blaadje één herinnering</span></span>
           </div>
         </div>
       </div>
