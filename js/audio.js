@@ -133,6 +133,7 @@ const Speech = (() => {
     if (!SR) return null;
     let recog = null;
     let finalText = '';
+    let lastInterim = '';   // iOS maakt tekst soms pas definitief ná het stoppen
     let active = false;
     let restarts = 0;
     let lastStart = 0;
@@ -150,8 +151,9 @@ const Speech = (() => {
           if (r.isFinal) finalText += r[0].transcript + ' ';
           else interim += r[0].transcript;
         }
+        lastInterim = interim.trim();
         restarts = 0; // er komt echt iets binnen — teller resetten
-        if (handlers.onUpdate) handlers.onUpdate(finalText.trim(), interim.trim());
+        if (handlers.onUpdate) handlers.onUpdate(finalText.trim(), lastInterim);
       };
       recog.onerror = (e) => {
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') {
@@ -184,7 +186,7 @@ const Speech = (() => {
       },
       stop() { active = false; try { recog && recog.stop(); } catch (_) {} },
       abort() { active = false; try { recog && recog.abort(); } catch (_) {} },
-      get text() { return finalText.trim(); },
+      get text() { return `${finalText} ${lastInterim}`.trim(); },
       set onUpdate(fn) { handlers.onUpdate = fn; },
       set onUnavailable(fn) { handlers.onUnavailable = fn; },
     };

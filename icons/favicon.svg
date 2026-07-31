@@ -2,18 +2,16 @@
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#8FBC6E"/>
-      <stop offset="1" stop-color="#5E8E4E"/>
+      <stop offset="1" stop-color="#55854A"/>
     </linearGradient>
-    <radialGradient id="sun" cx="0.4" cy="0.4" r="1">
-      <stop offset="0" stop-color="#FFE9A8"/>
-      <stop offset="1" stop-color="#F2C14E"/>
-    </radialGradient>
   </defs>
   <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-  <circle cx="392" cy="122" r="52" fill="url(#sun)"/>
-  <g transform="rotate(-18 240 300)">
-    <path d="M240 150 C 240 210 240 330 240 420" stroke="#3E5C34" stroke-width="17" stroke-linecap="round" fill="none"/>
-    <ellipse cx="240" cy="268" rx="150" ry="95" fill="#FDF6EA"/>
-    <path d="M110 268 Q 240 244 370 268" stroke="#D8C9A8" stroke-width="9" fill="none"/>
+  <!-- het blaadje is de microfoon -->
+  <g transform="rotate(-9 256 250)">
+    <ellipse cx="256" cy="178" rx="98" ry="120" fill="#FDF6EA"/>
+    <path d="M256 76 C 256 120 256 200 256 280" stroke="#C9BB96" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M186 150 Q 256 132 326 150 M176 202 Q 256 182 336 202" stroke="#E4D9BC" stroke-width="8" fill="none" stroke-linecap="round"/>
   </g>
+  <path d="M 138 268 a 118 118 0 0 0 236 0" stroke="#FDF6EA" stroke-width="30" fill="none" stroke-linecap="round"/>
+  <path d="M256 388 v 44" stroke="#FDF6EA" stroke-width="30" stroke-linecap="round"/>
 </svg>

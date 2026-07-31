@@ -209,8 +209,15 @@
         pressTimer = setTimeout(() => {
           pressTimer = null;
           const yr = S.years.find(y => y.key === key);
-          showPeek(e.clientX, e.clientY, yr.label, yr.sub);
-          setTimeout(hidePeek, 1500);
+          // Even vasthouden = een momentje proeven, geen statistiek
+          if (yr.memories.length) {
+            const top = [...yr.memories].reverse().find(m => m.isFavorite) || yr.memories[yr.memories.length - 1];
+            showPeek(e.clientX, e.clientY, `“${top.title}”`,
+              yr.memories.length > 1 ? `en ${yr.memories.length - 1} andere momentjes` : yr.label);
+          } else {
+            showPeek(e.clientX, e.clientY, yr.label, 'nog geen momentjes');
+          }
+          setTimeout(hidePeek, 1600);
         }, 420);
       });
       g.addEventListener('pointerup', (e) => {
@@ -272,9 +279,11 @@
     $('#blad-quote').textContent = mem.text ? `“${mem.text}”` : `“${mem.title}”`;
     const child = activeChild();
     const age = ageAt(child, mem.date);
-    $('#blad-meta').textContent =
+    const cat = catById(mem.categoryId) || {};
+    $('#blad-meta').innerHTML =
+      `<span class="blad-cat" style="--accent:${cat.color || '#A6957A'}" title="${esc(cat.name || '')}">${svg(CAT_ICONS[cat.icon] || 'i-leafcat')}</span>` +
       `${new Date(mem.date).getDate()} ${MONTHS[new Date(mem.date).getMonth()]} ${new Date(mem.date).getFullYear()}` +
-      (age !== null ? ` · ${child.name} was ${Math.max(0, age)}` : '');
+      (age !== null ? ` · ${esc(child.name)} was ${Math.max(0, age)}` : '');
     $('#blad-audio').hidden = !mem.audioId;
     if (mem.audioId) {
       $('#blad-progress').style.width = '0%';
@@ -381,6 +390,9 @@
 
   // ============ Opnemen (zon) ============
   let rec = null, speech = null, recStarting = false;
+  // Vangnet: wat er live op het scherm stond, voor het geval de
+  // spraak-API bij het stoppen tóch niets teruggeeft (iOS-gril)
+  let lastLiveText = '';
 
   async function startRecording() {
     if (rec || recStarting) return;
@@ -422,9 +434,11 @@
       }
     };
 
+    lastLiveText = '';
     speech = Speech.create('nl-NL');
     if (speech) {
       speech.onUpdate = (final, interim) => {
+        lastLiveText = `${final} ${interim}`.trim();
         $('#transcript-placeholder').hidden = !!(final || interim);
         $('#transcript-text').innerHTML = `${esc(final)} <span class="interim">${esc(interim)}</span>`;
         const box = $('#live-transcript');
@@ -441,7 +455,7 @@
     const theRec = rec; rec = null;
     const sp = speech; speech = null;
     if (sp) { if (save) sp.stop(); else sp.abort(); }
-    const transcript = sp ? sp.text : '';
+    const transcript = (sp && sp.text) || lastLiveText;
     $('#record-overlay').hidden = true;
     if (!save) { theRec.cancel(); return; }
     const result = await theRec.stop();
@@ -520,28 +534,29 @@
   }
   $('#sheet-backdrop').addEventListener('click', () => { if (!sheetLocked) closeSheet(); });
 
+  /* Categorie kiezen: vier gekleurde iconen, geen woorden */
   function catSelectHTML(selectedId) {
-    return `<div class="cat-select" id="cat-select">
+    return `<div class="cat-rond" id="cat-select">
       ${S.categories.map(c => `
-        <button type="button" class="cat-option ${c.id === selectedId ? 'active' : ''}" data-cat="${c.id}" style="--accent:${c.color}">
-          <span class="cat-icoon">${svg(CAT_ICONS[c.icon] || 'i-leafcat')}</span>${esc(c.name)}
+        <button type="button" class="cat-knop ${c.id === selectedId ? 'active' : ''}" data-cat="${c.id}" style="--accent:${c.color}" aria-label="${esc(c.name)}">
+          ${svg(CAT_ICONS[c.icon] || 'i-leafcat')}
         </button>`).join('')}
     </div>`;
   }
   function bindCatSelect() {
-    $('#cat-select').querySelectorAll('.cat-option').forEach(b => b.addEventListener('click', () => {
-      $('#cat-select').querySelectorAll('.cat-option').forEach(x => x.classList.remove('active'));
+    $('#cat-select').querySelectorAll('.cat-knop').forEach(b => b.addEventListener('click', () => {
+      $('#cat-select').querySelectorAll('.cat-knop').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
     }));
   }
-  const selectedCat = () => $('#cat-select .cat-option.active')?.dataset.cat || S.categories[0]?.id;
+  const selectedCat = () => $('#cat-select .cat-knop.active')?.dataset.cat || S.categories[0]?.id;
 
   function childSelectHTML(selectedId) {
     if (S.children.length < 2) return '';
-    return `<div class="field"><label>Voor wie</label><div class="chip-row" id="child-select">
+    return `<div class="chip-row" id="child-select" style="justify-content:center;margin:14px 0 0">
       ${S.children.map(c => `
         <button type="button" class="filter-chip ${c.id === selectedId ? 'active' : ''}" data-child="${c.id}" style="--accent:${c.color}">${esc(c.name)}</button>`).join('')}
-    </div></div>`;
+    </div>`;
   }
   function bindChildSelect() {
     const box = $('#child-select');
@@ -598,16 +613,11 @@
         <div class="audio-progress"><i></i></div>
         <span class="audio-time">${fmtTime(recording.duration || 0)}</span>
       </div>
-      <div class="field"><label>Titel</label><input type="text" id="save-title" value="${esc(title)}"></div>
-      <div class="field"><label>Wat werd er gezegd of gedaan?</label>
-        <textarea id="save-text" placeholder="${recording.transcript ? '' : 'Luister terug en typ wat er gebeurde — de audio blijft er altijd bij.'}">${esc(recording.transcript)}</textarea>
-      </div>
+      <input type="text" class="veld-titel" id="save-title" value="${esc(title)}" placeholder="Titel">
+      <textarea class="veld-tekst" id="save-text" placeholder="Wat werd er gezegd of gedaan?">${esc(recording.transcript)}</textarea>
       ${childSelectHTML(S.activeChildId)}
-      <div class="field"><label>Categorie</label>${catSelectHTML(S.categories[0]?.id)}</div>
-      <div class="field-row">
-        <div class="field"><label>Datum</label><input type="date" id="save-date" value="${date}"></div>
-        <div class="field"><label>Tijd</label><input type="time" id="save-time" value="${time}"></div>
-      </div>
+      ${catSelectHTML(S.categories[0]?.id)}
+      <div class="datum-rij"><input type="date" id="save-date" class="datum-chip" value="${date}"></div>
       <div class="btn-stack">
         <button class="btn" id="save-confirm">${svg('i-check')}Bewaren</button>
         <button class="btn btn-danger" id="save-discard">Opname weggooien</button>
@@ -624,7 +634,9 @@
       const id = DB.uuid();
       const audioId = 'audio-' + id;
       await DB.put('audio', { id: audioId, blob: recording.blob, mime: recording.mime });
-      const when = new Date(`${$('#save-date').value}T${$('#save-time').value || '12:00'}`);
+      // Tijdstip is geen invulveld: vandaag = nu, een eerdere datum = midden op de dag
+      const picked = $('#save-date').value;
+      const when = picked === date ? new Date() : new Date(`${picked}T12:00`);
       const memory = {
         id,
         childId: selectedChild(),
@@ -685,14 +697,11 @@
     const { date, time } = dateInputValues(new Date(m.date));
     openSheet(`
       <h2 class="sheet-title">Momentje bewerken</h2>
-      <div class="field"><label>Titel</label><input type="text" id="edit-title" value="${esc(m.title)}"></div>
-      <div class="field"><label>Tekst</label><textarea id="edit-text">${esc(m.text || '')}</textarea></div>
+      <input type="text" class="veld-titel" id="edit-title" value="${esc(m.title)}" placeholder="Titel">
+      <textarea class="veld-tekst" id="edit-text" placeholder="Wat werd er gezegd of gedaan?">${esc(m.text || '')}</textarea>
       ${childSelectHTML(m.childId)}
-      <div class="field"><label>Categorie</label>${catSelectHTML(m.categoryId)}</div>
-      <div class="field-row">
-        <div class="field"><label>Datum</label><input type="date" id="edit-date" value="${date}"></div>
-        <div class="field"><label>Tijd</label><input type="time" id="edit-time" value="${time}"></div>
-      </div>
+      ${catSelectHTML(m.categoryId)}
+      <div class="datum-rij"><input type="date" id="edit-date" class="datum-chip" value="${date}"></div>
       <div class="btn-stack">
         <button class="btn" id="edit-save">${svg('i-check')}Opslaan</button>
         <button class="btn btn-secondary" id="edit-cancel">Annuleren</button>
@@ -705,7 +714,8 @@
       m.text = $('#edit-text').value.trim();
       m.categoryId = selectedCat();
       m.childId = selectedChild() || m.childId;
-      const when = new Date(`${$('#edit-date').value}T${$('#edit-time').value || '12:00'}`);
+      // Datum aanpasbaar, het oorspronkelijke tijdstip reist stilletjes mee
+      const when = new Date(`${$('#edit-date').value}T${time}`);
       if (!isNaN(when)) m.date = when.toISOString();
       await DB.put('memories', m);
       await loadAll();
@@ -929,7 +939,7 @@
         <p class="settings-label">Over</p>
         <div class="settings-card">
           <div class="settings-row" style="cursor:default">
-            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.0 · elk blaadje één herinnering</span></span>
+            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.1 · elk blaadje één herinnering</span></span>
           </div>
         </div>
       </div>

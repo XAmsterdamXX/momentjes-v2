@@ -194,7 +194,13 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
   font-style: italic; color: #4A4030; text-align: center; max-width: 300px;
   overflow-y: auto; max-height: 34dvh;
 }
-#blad-meta { margin-top: 18px; font-size: 12.5px; color: var(--inkt-vaag); }
+#blad-meta { margin-top: 18px; font-size: 12.5px; color: var(--inkt-vaag); display: flex; align-items: center; gap: 7px; }
+.blad-cat {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.blad-cat .icon { width: 12px; height: 12px; }
 .blad-audio {
   display: flex; align-items: center; gap: 10px;
   width: 210px; margin-top: 16px;
@@ -336,32 +342,65 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
 .field input[type="date"]::-webkit-date-and-time-value,
 .field input[type="time"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
 
-.chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .filter-chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 14px; border-radius: 100px;
-  background: #fff; border: 1.5px solid var(--lijn);
-  font-size: 13.5px; font-weight: 600; color: var(--inkt-zacht);
+  font-size: 13.5px; font-weight: 600;
+  color: var(--accent, var(--inkt-zacht));
+  background: color-mix(in srgb, var(--accent, #8D7C60) 9%, #fff);
+  border: 1.5px solid color-mix(in srgb, var(--accent, #8D7C60) 25%, transparent);
   transition: all 0.15s ease;
 }
 .filter-chip .icon { width: 14px; height: 14px; }
 .filter-chip.active { color: #fff; background: var(--accent, var(--inkt)); border-color: transparent; }
 
-.cat-select { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.cat-option {
-  display: flex; align-items: center; gap: 9px;
-  background: #fff; border-radius: 13px;
-  padding: 11px 12px; font-size: 14px; font-weight: 600;
-  border: 1.5px solid var(--lijn);
-  transition: all 0.15s ease;
+/* Invulvelden zonder database-gevoel */
+.veld-titel {
+  width: 100%; border: none; outline: none; background: none;
+  font-size: 20px; font-weight: 700; color: var(--inkt);
+  padding: 14px 2px 8px;
+  border-bottom: 1.5px solid var(--lijn);
 }
-.cat-option .cat-icoon {
-  width: 30px; height: 30px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center; color: #fff;
-  background: var(--accent);
+.veld-titel:focus { border-bottom-color: var(--zon-2); }
+.veld-titel::placeholder { color: var(--inkt-vaag); font-weight: 600; }
+.veld-tekst {
+  width: 100%; border: none; outline: none;
+  background: rgba(84, 69, 47, 0.045);
+  border-radius: 14px;
+  font-family: var(--serif); font-style: italic;
+  font-size: 16.5px; line-height: 1.6; color: #4A4030;
+  padding: 13px 15px; margin: 14px 0 4px;
+  min-height: 96px; resize: vertical;
 }
-.cat-option .cat-icoon .icon { width: 15px; height: 15px; }
-.cat-option.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, white); }
+.veld-tekst::placeholder { color: var(--inkt-vaag); }
+
+/* Categorie: vier gekleurde iconen */
+.cat-rond { display: flex; gap: 16px; justify-content: center; margin: 16px 0 4px; }
+.cat-knop {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, #fff);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s ease;
+}
+.cat-knop .icon { width: 22px; height: 22px; }
+.cat-knop.active { background: var(--accent); color: #fff; transform: scale(1.12); box-shadow: 0 5px 14px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* Datum: één stil chipje, geen formulierveld */
+.datum-rij { display: flex; justify-content: center; margin: 12px 0 2px; }
+input.datum-chip {
+  -webkit-appearance: none; appearance: none;
+  border: none; outline: none;
+  background: rgba(84, 69, 47, 0.06);
+  border-radius: 100px;
+  padding: 8px 18px; height: auto;
+  font-size: 14px; font-weight: 600; color: var(--inkt-zacht);
+  text-align: center; width: auto; min-width: 150px; max-width: 200px;
+  -webkit-text-fill-color: var(--inkt-zacht);
+}
+input.datum-chip::-webkit-date-and-time-value { text-align: center; margin: 0; }
+input.datum-chip::-webkit-calendar-picker-indicator { opacity: 0.4; }
 
 .audio-player {
   display: flex; align-items: center; gap: 12px;
@@ -431,8 +470,8 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
 }
 .zoek-blad { width: 26px; height: 18px; flex-shrink: 0; }
 .zoek-rij .grow { flex: 1; min-width: 0; }
-.zoek-titel { font-size: 15px; font-weight: 600; }
-.zoek-sub { font-size: 12px; color: var(--inkt-vaag); margin-top: 1px; }
+.zoek-titel { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zoek-sub { display: block; font-size: 12px; color: var(--inkt-vaag); margin-top: 1px; }
 .leeg-melding { text-align: center; padding: 26px 10px; color: var(--inkt-vaag); font-size: 14px; }
 
 /* ===== Dialoog & toast ===== */
