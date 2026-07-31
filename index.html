@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Momentjes</title>
+  <meta name="description" content="Bewaar de mooiste uitspraken en momenten van je kind — privé, op je eigen telefoon.">
+  <meta name="theme-color" content="#F6F0E2">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Momentjes">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v5a4 4 0 0 0 4 4Z"/><path d="M19 11a7 7 0 0 1-14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 18v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.6 3.6c.35-1.47 2.45-1.47 2.8 0a1.44 1.44 0 0 0 2.15.89c1.29-.79 2.77.7 1.99 1.99a1.44 1.44 0 0 0 .88 2.15c1.48.35 1.48 2.45 0 2.8a1.44 1.44 0 0 0-.88 2.15c.78 1.29-.7 2.77-2 1.99a1.44 1.44 0 0 0-2.14.88c-.35 1.48-2.45 1.48-2.8 0a1.44 1.44 0 0 0-2.15-.88c-1.29.78-2.78-.7-1.99-2a1.44 1.44 0 0 0-.89-2.14c-1.47-.35-1.47-2.45 0-2.8a1.44 1.44 0 0 0 .89-2.15c-.79-1.29.7-2.78 1.99-1.99.86.52 1.98.06 2.15-.89Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8.5 5.7c0-.8.9-1.3 1.6-.9l9.2 6.3c.6.4.6 1.4 0 1.8l-9.2 6.3c-.7.4-1.6-.1-1.6-.9V5.7Z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.4"/><rect x="13.5" y="5" width="4" height="14" rx="1.4"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.3 4.9 13a4.8 4.8 0 0 1 0-6.8 4.7 4.7 0 0 1 6.7 0l.4.4.4-.4a4.7 4.7 0 0 1 6.7 0 4.8 4.8 0 0 1 0 6.8L12 20.3Z"/></symbol>
+      <symbol id="i-heart-o" viewBox="0 0 24 24"><path d="M12 20.3 4.9 13a4.8 4.8 0 0 1 0-6.8 4.7 4.7 0 0 1 6.7 0l.4.4.4-.4a4.7 4.7 0 0 1 6.7 0 4.8 4.8 0 0 1 0 6.8L12 20.3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14.5 5.5 4 4L9 19H5v-4l9.5-9.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m12.5 7.5 4 4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7m3.5 0-.7 11.2A2 2 0 0 1 14.8 20H9.2a2 2 0 0 1-2-1.8L6.5 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m8 7 4-4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 14V3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m8 10 4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="15" r="1.5"/></symbol>
+      <symbol id="i-quote" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H13l-4.2 3.9c-.6.55-1.55.12-1.55-.68V16H6.5A2.5 2.5 0 0 1 4 13.5v-8Z"/></symbol>
+      <symbol id="i-question" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 3.05c-.7.33-1 .8-1 1.4v.35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.15"/></symbol>
+      <symbol id="i-leafcat" viewBox="0 0 24 24"><path d="M20 4c-8.5 0-14 4.5-14 11 0 1.2.25 2.3.7 3.3C8.5 13 12.5 10 17 8.5 12.9 11 9.3 14.2 7.9 19.2c.9.5 2 .8 3.1.8 6.5 0 9-8 9-16Z"/></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 4.8C7.2 4 8.5 3.6 10 3.6c2.6 0 3.9 1.5 6.2 1.5 1 0 2-.2 2.8-.6v8.1c-.9.4-1.8.6-2.8.6-2.3 0-3.6-1.5-6.2-1.5-1.5 0-2.8.4-4 1.2V4.8Z"/></symbol>
+    </defs>
+  </svg>
+
+  <div id="stage">
+
+    <!-- ===== De wereld ===== -->
+    <div class="view zoomed-out" id="view-bos">
+      <svg id="bos-svg" viewBox="0 0 420 880" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="heuvel1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4C69D"/><stop offset="1" stop-color="#C8B98D"/></linearGradient>
+          <linearGradient id="heuvel2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C2B282"/><stop offset="1" stop-color="#B5A575"/></linearGradient>
+        </defs>
+        <path d="M0 655 Q 110 622 210 640 Q 320 658 420 630 L420 880 L0 880 Z" fill="url(#heuvel1)"/>
+        <path d="M0 726 Q 140 700 280 716 Q 360 725 420 712 L420 880 L0 880 Z" fill="url(#heuvel2)" opacity="0.9"/>
+      </svg>
+    </div>
+
+    <div class="view small" id="view-boom">
+      <svg id="boom-svg" viewBox="0 0 420 880" preserveAspectRatio="xMidYMid slice">
+        <text id="boom-titel" x="72" y="52" fill="#54452F" font-size="24" font-weight="700"></text>
+        <text id="boom-sub" x="72" y="72" fill="#9A8A6E" font-size="12.5"></text>
+        <path d="M130 838 Q 210 818 290 838" fill="none" stroke="#C9B99C" stroke-width="4" stroke-linecap="round"/>
+        <g id="boom-art"></g>
+      </svg>
+    </div>
+
+    <div id="view-blad">
+      <div id="blad-art"></div>
+      <p id="blad-quote"></p>
+      <p id="blad-meta"></p>
+      <div class="blad-audio" id="blad-audio" hidden>
+        <div class="audio-progress"><i id="blad-progress"></i></div>
+        <span id="blad-time"></span>
+      </div>
+      <button class="blad-nav" id="blad-prev" aria-label="Vorig momentje">
+        <svg viewBox="0 0 48 40"><ellipse cx="24" cy="20" rx="20" ry="13" fill="#D7CBAA" transform="rotate(-10 24 20)"/><path d="M27 14l-7 6 7 6" fill="none" stroke="#5A4A34" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="blad-nav" id="blad-next" aria-label="Volgend momentje">
+        <svg viewBox="0 0 48 40"><ellipse cx="24" cy="20" rx="20" ry="13" fill="#D7CBAA" transform="rotate(10 24 20)"/><path d="M21 14l7 6-7 6" fill="none" stroke="#5A4A34" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="blad-acties">
+        <button class="mini-knop" id="blad-fav" aria-label="Favoriet"><svg class="icon"><use href="#i-heart-o"/></svg></button>
+        <button class="mini-knop" id="blad-edit" aria-label="Bewerken"><svg class="icon"><use href="#i-edit"/></svg></button>
+        <button class="mini-knop" id="blad-del" aria-label="Verwijderen"><svg class="icon"><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+
+    <!-- ===== Vaste elementen: de zon is altijd boven ===== -->
+    <button id="sun-btn" aria-label="Momentje opnemen">
+      <span class="sun-ring" aria-hidden="true"></span>
+      <svg class="icon"><use href="#i-mic"/></svg>
+    </button>
+    <button class="rond-knop" id="back-btn" aria-label="Terug"><svg class="icon"><use href="#i-back"/></svg></button>
+    <button class="rond-knop" id="child-chip" aria-label="Kind wisselen"></button>
+    <button class="hoek-knop" id="corner-search" aria-label="Zoeken"><svg class="icon"><use href="#i-search"/></svg></button>
+    <button class="hoek-knop rechts" id="corner-settings" aria-label="Instellingen"><svg class="icon"><use href="#i-gear"/></svg></button>
+
+    <div id="peek"></div>
+  </div>
+
+  <!-- ===== Opname: vertellen in de avond ===== -->
+  <div class="overlay" id="record-overlay" hidden>
+    <div class="sterren" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="record-screen">
+      <div class="record-top">
+        <span class="rec-dot" aria-hidden="true"></span>
+        <span id="record-timer">0:00</span>
+      </div>
+      <div class="wave" id="wave" aria-hidden="true"></div>
+      <div class="live-transcript" id="live-transcript">
+        <p class="transcript-placeholder" id="transcript-placeholder">Vertel maar…</p>
+        <p id="transcript-text"></p>
+      </div>
+      <p class="speech-note" id="speech-note" hidden>Live meeschrijven lukt hier niet — je opname wordt gewoon bewaard.</p>
+      <div class="record-controls">
+        <button class="ctrl-btn" id="record-cancel" aria-label="Annuleren"><svg class="icon"><use href="#i-close"/></svg></button>
+        <button class="ctrl-btn ctrl-main" id="record-stop" aria-label="Klaar"><svg class="icon"><use href="#i-check"/></svg></button>
+        <button class="ctrl-btn" id="record-pause" aria-label="Pauzeren"><svg class="icon"><use href="#i-pause"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Sheets, dialoog, onboarding ===== -->
+  <div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-content" id="sheet-content"></div>
+  </div>
+
+  <div class="dialog-backdrop" id="dialog-backdrop" hidden>
+    <div class="dialog" role="alertdialog" aria-modal="true">
+      <p class="dialog-text" id="dialog-text"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" id="dialog-cancel">Annuleer</button>
+        <button class="btn" id="dialog-confirm"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="onboarding" id="onboarding" hidden>
+    <div class="onboarding-inner" id="onboarding-inner"></div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <input type="file" id="import-file" accept=".zip,application/zip" hidden>
+
+  <script src="./js/db.js"></script>
+  <script src="./js/zip.js"></script>
+  <script src="./js/audio.js"></script>
+  <script src="./js/backup.js"></script>
+  <script src="./js/scene.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
