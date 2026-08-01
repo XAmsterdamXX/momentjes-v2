@@ -90,8 +90,8 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
 /* ===== De zon: altijd boven, altijd de opnameknop ===== */
 #sun-btn {
   position: absolute; z-index: 30;
-  top: calc(var(--safe-top) + 16px); right: 18px;
-  width: 64px; height: 64px; border-radius: 50%;
+  top: calc(var(--safe-top) + 26px); right: 30px;
+  width: 76px; height: 76px; border-radius: 50%;
   background: radial-gradient(circle at 38% 36%, var(--zon-1), var(--zon-2));
   box-shadow: 0 6px 24px rgba(240, 164, 90, 0.45);
   display: flex; align-items: center; justify-content: center;
@@ -137,9 +137,10 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
   color: #fff; font-size: 11px; font-weight: 700;
 }
 
+/* Zoeken + instellingen samen in één hoek: geen verdwaalde iconen */
 .hoek-knop {
   position: absolute; z-index: 30;
-  bottom: calc(var(--safe-bottom) + 18px); left: 18px;
+  bottom: calc(var(--safe-bottom) + 18px); right: 70px; left: auto;
   width: 42px; height: 42px; border-radius: 50%;
   color: var(--inkt-vaag);
   background: rgba(253, 248, 238, 0.5);
@@ -544,6 +545,41 @@ input.datum-chip::-webkit-calendar-picker-indicator { opacity: 0.4; }
   width: 15px; height: 15px; color: var(--inkt-vaag);
   pointer-events: none; fill: currentColor;
 }
+.veld-tekst.groot { min-height: 42dvh; }
+
+/* Vier categorieën als net vak van 2×2 */
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.cat-grid .cat-chip { justify-content: center; }
+
+/* Twee knoppen broederlijk naast elkaar */
+.btn-rij { display: flex; gap: 10px; margin-top: 20px; }
+.btn-rij .btn { flex: 1.6; }
+.btn-rij .btn-danger, .btn-rij .btn-secondary { flex: 1; }
+
+/* Het wolkje op het homescherm: bedenk je verhaal, tik en vertel */
+.wolk {
+  position: absolute; z-index: 28;
+  top: calc(var(--safe-top) + 78px); left: 18px;
+  max-width: 235px;
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(253, 248, 238, 0.78);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px 20px 20px 6px;
+  padding: 13px 14px;
+  box-shadow: 0 4px 18px rgba(80, 60, 30, 0.12);
+  text-align: left;
+  transition: opacity 0.4s ease;
+}
+#wolk-tekst {
+  font-family: var(--serif); font-style: italic;
+  font-size: 14.5px; line-height: 1.5; color: var(--inkt);
+}
+.wolk-nieuw {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(84, 69, 47, 0.08); color: var(--inkt-zacht);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.wolk-nieuw .icon { width: 14px; height: 14px; }
 
 /* 'Weet de dag niet?' — maand of seizoen is genoeg */
 .datum-ongeveer {

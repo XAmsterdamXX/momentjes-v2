@@ -217,7 +217,7 @@ const Scene = (() => {
       // Anker op de voet van de stam (210, 812), dan schalen en plaatsen
       g.setAttribute('transform',
         `translate(${slot.x - 210 * slot.s} ${slot.ground - 812 * slot.s}) scale(${slot.s})`);
-      renderTree(g, yr.memories, { uptoMonth: yr.uptoMonth, leafScale: 1.5, seedBase: i * 131, growth: yr.growth ?? 1 });
+      renderTree(g, yr.memories, { uptoMonth: yr.uptoMonth, leafScale: 1.2, seedBase: i * 131, growth: yr.growth ?? 1 });
       // Aanraakvlak over de hele boom
       const hit = document.createElementNS(NS, 'rect');
       hit.setAttribute('x', 60); hit.setAttribute('y', 100);

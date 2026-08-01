@@ -205,6 +205,10 @@
     sunBtn.classList.toggle('weg', level === 'blad');
     $('#corner-search').classList.toggle('weg', level === 'blad');
     $('#corner-settings').classList.toggle('weg', level === 'blad');
+    // Het wolkje woont alleen in het bos
+    const wolk = $('#wolk');
+    wolk.hidden = level !== 'bos' || !child;
+    if (!wolk.hidden && !huidigeVonk) nieuweVonk();
     const mems = S.memories.filter(m => m.childId === S.activeChildId);
     // De zon lokt zachtjes als het bos leeg is, of al dagen stil
     const laatste = mems.length ? new Date(mems[mems.length - 1].date) : null;
@@ -451,13 +455,17 @@
     'Welke logica van {naam} klopt eigenlijk best wel?',
     'Wat wil je {naam} later kunnen vertellen over vandaag?',
   ];
-  let vorigeVonk = -1;
+  let vorigeVonk = -1, huidigeVonk = '';
+  /* Eén vonk-vraag leeft op twee plekken: het wolkje op het homescherm
+     (waar je bedenkt wát je gaat vertellen) en het opnamescherm daarna */
   function nieuweVonk() {
     const naam = (activeChild() || {}).name || 'je kind';
     let i;
     do { i = Math.floor(Math.random() * VONKEN.length); } while (i === vorigeVonk && VONKEN.length > 1);
     vorigeVonk = i;
-    $('#vonk-tekst').textContent = VONKEN[i].replaceAll('{naam}', naam);
+    huidigeVonk = VONKEN[i].replaceAll('{naam}', naam);
+    $('#vonk-tekst').textContent = huidigeVonk;
+    $('#wolk-tekst').textContent = huidigeVonk;
   }
 
   async function startRecording() {
@@ -478,7 +486,8 @@
     const overlay = $('#record-overlay');
     overlay.hidden = false;
     $('#record-timer').textContent = '0:00';
-    nieuweVonk();
+    // De vraag uit het wolkje reist mee — je hebt al bedacht wat je vertelt
+    if (!huidigeVonk) nieuweVonk();
     $('.rec-dot').classList.remove('paused');
     $('#record-pause use').setAttribute('href', '#i-pause');
 
@@ -509,6 +518,8 @@
     }
   }
   $('#vonk-nieuw').addEventListener('click', nieuweVonk);
+  $('#wolk').addEventListener('click', startRecording);
+  $('#wolk-nieuw').addEventListener('click', (e) => { e.stopPropagation(); nieuweVonk(); });
 
   async function stopRecording(save) {
     if (!rec) return;
@@ -597,7 +608,7 @@
 
   /* Categorie kiezen: merkteken + naam, rustig in de inkt van de wereld */
   function catSelectHTML(selectedId) {
-    return `<div class="cat-wrap" id="cat-select">
+    return `<div class="cat-wrap cat-grid" id="cat-select">
       ${S.categories.map(c => `
         <button type="button" class="cat-chip ${c.id === selectedId ? 'active' : ''}" data-cat="${c.id}" style="--accent:${c.color}">
           ${svg(catMerk(c))}${esc(c.name)}
@@ -719,7 +730,10 @@
         <div class="audio-progress"><i></i></div>
         <span class="audio-time">${fmtTime(recording.duration || 0)}</span>
       </div>
-      <input type="text" class="veld-titel" id="save-title" value="${esc(title)}" placeholder="Titel">
+      <div class="tekst-wrap">
+        <input type="text" class="veld-titel" id="save-title" value="${esc(title)}" placeholder="Titel">
+        ${svg('i-edit', 'tekst-potlood')}
+      </div>
       <div class="tekst-wrap">
         <textarea class="veld-tekst" id="save-text" placeholder="Wat werd er gezegd of gedaan?">${esc(recording.transcript)}</textarea>
         ${svg('i-edit', 'tekst-potlood')}
@@ -727,9 +741,9 @@
       ${childSelectHTML(S.activeChildId)}
       ${catSelectHTML(S.categories[0]?.id)}
       ${datumRijHTML('save', date)}
-      <div class="btn-stack">
+      <div class="btn-rij">
         <button class="btn" id="save-confirm">${svg('i-check')}Bewaren</button>
-        <button class="btn btn-danger" id="save-discard">Opname weggooien</button>
+        <button class="btn btn-danger" id="save-discard">Verwijderen</button>
       </div>
     `, { locked: true });
     bindCatSelect();
@@ -816,7 +830,10 @@
     const { date, time } = dateInputValues(new Date(m.date));
     openSheet(`
       <h2 class="sheet-title">Momentje bewerken</h2>
-      <input type="text" class="veld-titel" id="edit-title" value="${esc(m.title)}" placeholder="Titel">
+      <div class="tekst-wrap">
+        <input type="text" class="veld-titel" id="edit-title" value="${esc(m.title)}" placeholder="Titel">
+        ${svg('i-edit', 'tekst-potlood')}
+      </div>
       <div class="tekst-wrap">
         <textarea class="veld-tekst groot" id="edit-text" placeholder="Wat werd er gezegd of gedaan?">${esc(m.text || '')}</textarea>
         ${svg('i-edit', 'tekst-potlood')}
@@ -824,7 +841,7 @@
       ${childSelectHTML(m.childId)}
       ${catSelectHTML(m.categoryId)}
       ${datumRijHTML('edit', date, m)}
-      <div class="btn-stack">
+      <div class="btn-rij">
         <button class="btn" id="edit-save">${svg('i-check')}Opslaan</button>
         <button class="btn btn-secondary" id="edit-cancel">Annuleren</button>
       </div>
@@ -862,7 +879,6 @@
   // ============ Kind wisselen ============
   $('#child-chip').addEventListener('click', () => {
     openSheet(`
-      <h2 class="sheet-title">Wiens bos?</h2>
       <div class="settings-card">
         ${S.children.map(c => `
           <button class="settings-row" data-kies-kind="${c.id}">
@@ -1159,7 +1175,7 @@
         <p class="settings-label">Over</p>
         <div class="settings-card">
           <div class="settings-row" style="cursor:default">
-            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.5 · elk blaadje één herinnering</span></span>
+            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.6 · elk blaadje één herinnering</span></span>
           </div>
         </div>
       </div>
@@ -1234,6 +1250,15 @@
   function showOnboarding() {
     const ob = $('#onboarding');
     ob.hidden = false;
+    // Elke keer een andere kinderuitspraak in de animatie
+    const OB_QUOTES = [
+      ['“mama, dromen schapen', 'eigenlijk over ons?”'],
+      ['“papa, waar woont', 'de wind als het stil is?”'],
+      ['“ik wil later', 'wolkenmaker worden”'],
+      ['“opa is de baas', 'van alle opa’s, toch?”'],
+      ['“de maan loopt met ons', 'mee naar huis”'],
+    ];
+    const obQuote = OB_QUOTES[Math.floor(Math.random() * OB_QUOTES.length)];
     $('#onboarding-inner').innerHTML = `
       <!-- Het punt van de app in één doorlopende animatie:
            iets kleins & grappigs → één tik op de zon → een blaadje erbij -->
@@ -1241,8 +1266,8 @@
         <g class="ob-beat ob-b1">
           <rect x="30" y="34" width="176" height="52" rx="16" fill="#FDF8EE" stroke="rgba(84,69,47,0.14)"/>
           <path d="M62 86 l-8 14 l20 -14 Z" fill="#FDF8EE"/>
-          <text x="118" y="56" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">“mama, dromen schapen</text>
-          <text x="118" y="74" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">eigenlijk over ons?”</text>
+          <text x="118" y="56" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">${obQuote[0]}</text>
+          <text x="118" y="74" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">${obQuote[1]}</text>
         </g>
         <g class="ob-beat ob-b2">
           <circle cx="140" cy="66" r="30" fill="#F0A45A"/>
