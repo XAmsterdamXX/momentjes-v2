@@ -54,10 +54,10 @@ const Scene = (() => {
 
   /* Bladgrootte krimpt zachtjes naarmate een maand voller hangt */
   function leafSize(countInMonth) {
-    if (countInMonth <= 2) return { rx: 15, ry: 9.5, gap: 26 };
-    if (countInMonth <= 5) return { rx: 13, ry: 8.2, gap: 21 };
-    if (countInMonth <= 9) return { rx: 11, ry: 7, gap: 17 };
-    return { rx: 9.5, ry: 6, gap: 14 };
+    if (countInMonth <= 2) return { rx: 15, ry: 9.5 };
+    if (countInMonth <= 5) return { rx: 13.5, ry: 8.5 };
+    if (countInMonth <= 10) return { rx: 12, ry: 7.6 };
+    return { rx: 10.5, ry: 6.8 };
   }
 
   const rnd = (seed) => { const x = Math.sin(seed * 999.7) * 10000; return x - Math.floor(x); };
@@ -96,10 +96,26 @@ const Scene = (() => {
     return p;
   };
 
+  /* Kleur betekent per modus precies één ding:
+     'seizoen'  → blad kleurt met het seizoen mee
+     'categorie'→ blad draagt de kleur van zijn categorie (proef) */
+  let colorMode = 'seizoen';
+  let catColorOf = () => null;
+
   function leafColor(mem, i) {
     if (mem.isFavorite) return GOUD;
+    if (colorMode === 'categorie') {
+      const base = catColorOf(mem.categoryId);
+      if (base) return i % 2 ? base : shade(base, i % 4 === 2 ? -14 : 10);
+    }
     const pal = SEASON[seasonOf(new Date(mem.date).getMonth())];
     return pal[i % pal.length];
+  }
+
+  function shade(hex, pct) {
+    const n = parseInt(hex.slice(1), 16);
+    const f = (v) => Math.max(0, Math.min(255, Math.round(v + (pct / 100) * 255)));
+    return '#' + [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => f(v).toString(16).padStart(2, '0')).join('');
   }
 
   /* ===== Eén boom tekenen =====
@@ -107,8 +123,17 @@ const Scene = (() => {
      uptoMonth: 11 voor een afgesloten jaar; voor het lopende jaar de
      huidige maand — zo groeit de boom letterlijk met het jaar mee.
      interactive: blaadjes krijgen data-idx (voor strijken en openen). */
-  function renderTree(group, memories, { uptoMonth = 11, interactive = false, leafScale = 1, seedBase = 0 } = {}) {
+  function renderTree(group, memories, { uptoMonth = 11, interactive = false, leafScale = 1, seedBase = 0, growth = 1 } = {}) {
     group.innerHTML = '';
+
+    // De boom groeit met de blaadjes mee: een jong jaar is een klein boompje.
+    // Geankerd op de voet van de stam, zodat hij op de grond blijft staan.
+    if (growth < 1) {
+      const inner = document.createElementNS(NS, 'g');
+      inner.setAttribute('transform', `translate(${(210 * (1 - growth)).toFixed(1)} ${(812 * (1 - growth)).toFixed(1)}) scale(${growth.toFixed(3)})`);
+      group.appendChild(inner);
+      group = inner;
+    }
 
     const byMonth = new Map();
     memories.forEach((m, idx) => {
@@ -131,22 +156,30 @@ const Scene = (() => {
       group.appendChild(mkPath(twig.d, 5));
       if (!entries.length) continue;
 
-      // Meetlat langs de twijg om blaadjes vanaf de punt te rijgen
+      // Meetlat langs de twijg; blaadjes groeien als een bos rónd de twijg
+      // (twee rijen, wisselende hoeken) — nooit meer als rups erlangs
       const measure = mkPath(twig.d, 1);
       group.appendChild(measure);
       const total = measure.getTotalLength();
-      const { rx, ry, gap } = leafSize(entries.length);
+      const { rx, ry } = leafSize(entries.length);
 
-      const step = Math.min(rx * 1.8, (total - 16) / Math.max(1, entries.length - 1));
+      const rows = entries.length > 3 ? 2 : 1;
+      const perRow = Math.ceil(entries.length / rows);
+      const span = Math.min(total * 0.6, Math.max(rx * 1.3, perRow * rx * 1.15));
+      const step = perRow > 1 ? span / (perRow - 1) : 0;
+
       entries.forEach(({ mem, idx }, i) => {
-        const along = Math.max(6, total - 6 - i * step);
+        const row = i % rows, k = Math.floor(i / rows);
+        const along = Math.max(8, total - 8 - k * step - (row ? step * 0.5 : 0));
         const pt = measure.getPointAtLength(Math.min(along, total - 2));
         const ahead = measure.getPointAtLength(Math.max(0, Math.min(along + 4, total)));
         const angle = Math.atan2(ahead.y - pt.y, ahead.x - pt.x) * 180 / Math.PI;
-        const off = (i % 2 === 0 ? -1 : 1) * (ry * 1.3 + 2 + rnd(seedBase + idx + 40) * 3);
+        const side = rows === 1 ? (i % 2 ? 1 : -1) : (row ? 1 : -1);
+        const spread = ry * (0.9 + rnd(seedBase + idx + 40) * 1.3);
+        const off = side * spread;
         const leaf = makeLeaf({
-          x: pt.x, y: pt.y + off,
-          rot: angle + (i % 2 === 0 ? -14 : 12) + (rnd(seedBase + idx) * 10 - 5),
+          x: pt.x + (rnd(seedBase + idx + 90) * 4 - 2), y: pt.y + off,
+          rot: angle + side * (22 + rnd(seedBase + idx) * 18) ,
           rx: rx * leafScale, ry: ry * leafScale,
           fill: leafColor(mem, i),
           goud: mem.isFavorite,
@@ -184,7 +217,7 @@ const Scene = (() => {
       // Anker op de voet van de stam (210, 812), dan schalen en plaatsen
       g.setAttribute('transform',
         `translate(${slot.x - 210 * slot.s} ${slot.ground - 812 * slot.s}) scale(${slot.s})`);
-      renderTree(g, yr.memories, { uptoMonth: yr.uptoMonth, leafScale: 1.5, seedBase: i * 131 });
+      renderTree(g, yr.memories, { uptoMonth: yr.uptoMonth, leafScale: 1.5, seedBase: i * 131, growth: yr.growth ?? 1 });
       // Aanraakvlak over de hele boom
       const hit = document.createElementNS(NS, 'rect');
       hit.setAttribute('x', 60); hit.setAttribute('y', 100);
@@ -218,5 +251,10 @@ const Scene = (() => {
     });
   }
 
-  return { renderTree, renderBos, breeze, SEASON, GOUD, seasonOf, leafColor };
+  return {
+    renderTree, renderBos, breeze, SEASON, GOUD, seasonOf, leafColor,
+    set colorMode(m) { colorMode = m; },
+    get colorMode() { return colorMode; },
+    set catColorOf(fn) { catColorOf = fn; },
+  };
 })();

@@ -1,6 +1,6 @@
 /* Momentjes V2 — service worker: de app werkt ook zonder internet. */
 
-const CACHE = 'momentjes-bos-v3';
+const CACHE = 'momentjes-bos-v4';
 const ASSETS = [
   './', './index.html', './css/style.css',
   './js/db.js', './js/zip.js', './js/audio.js', './js/backup.js', './js/scene.js', './js/app.js',

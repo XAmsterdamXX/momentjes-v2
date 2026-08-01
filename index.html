@@ -83,24 +83,29 @@
     </div>
 
     <div id="view-blad">
-      <div id="blad-art"></div>
-      <h2 id="blad-titel"></h2>
-      <p id="blad-quote"></p>
-      <p id="blad-meta"></p>
+      <div class="blad-kop">
+        <div id="blad-artje" aria-hidden="true"></div>
+        <div class="blad-kopinfo">
+          <h2 id="blad-titel"></h2>
+          <p id="blad-meta"></p>
+        </div>
+      </div>
       <div class="blad-audio" id="blad-audio" hidden>
+        <button id="blad-play" aria-label="Afspelen"><svg class="icon"><use href="#i-play"/></svg></button>
         <div class="audio-progress"><i id="blad-progress"></i></div>
         <span id="blad-time"></span>
       </div>
-      <button class="blad-nav" id="blad-prev" aria-label="Vorig momentje">
-        <svg viewBox="0 0 48 40"><ellipse cx="24" cy="20" rx="20" ry="13" fill="#D7CBAA" transform="rotate(-10 24 20)"/><path d="M27 14l-7 6 7 6" fill="none" stroke="#5A4A34" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="blad-nav" id="blad-next" aria-label="Volgend momentje">
-        <svg viewBox="0 0 48 40"><ellipse cx="24" cy="20" rx="20" ry="13" fill="#D7CBAA" transform="rotate(10 24 20)"/><path d="M21 14l7 6-7 6" fill="none" stroke="#5A4A34" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="blad-acties">
+      <p id="blad-quote"></p>
+      <div class="blad-onder">
+        <button class="blad-nav" id="blad-prev" aria-label="Vorig momentje">
+          <svg viewBox="0 0 48 40"><ellipse cx="24" cy="20" rx="20" ry="13" fill="#D7CBAA" transform="rotate(-10 24 20)"/><path d="M27 14l-7 6 7 6" fill="none" stroke="#5A4A34" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <button class="mini-knop" id="blad-fav" aria-label="Favoriet"><svg class="icon"><use href="#i-heart-o"/></svg></button>
         <button class="mini-knop" id="blad-edit" aria-label="Bewerken"><svg class="icon"><use href="#i-edit"/></svg></button>
         <button class="mini-knop" id="blad-del" aria-label="Verwijderen"><svg class="icon"><use href="#i-trash"/></svg></button>
+        <button class="blad-nav" id="blad-next" aria-label="Volgend momentje">
+          <svg viewBox="0 0 48 40"><ellipse cx="24" cy="20" rx="20" ry="13" fill="#D7CBAA" transform="rotate(10 24 20)"/><path d="M21 14l7 6-7 6" fill="none" stroke="#5A4A34" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
     </div>
 

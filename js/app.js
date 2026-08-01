@@ -63,6 +63,9 @@
     S.categories.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     S.memories.sort((a, b) => new Date(a.date) - new Date(b.date));
     S.yearMode = await DB.getSetting('yearMode', 'kalender');
+    Scene.colorMode = await DB.getSetting('leafColorMode', 'seizoen');
+    Scene.catColorOf = (id) => (catById(id) || {}).color || null;
+    document.body.classList.toggle('cat-kleur', Scene.colorMode === 'categorie');
     if (!S.activeChildId) S.activeChildId = await DB.getSetting('activeChildId');
     if (!childById(S.activeChildId) && S.children[0]) S.activeChildId = S.children[0].id;
   }
@@ -122,6 +125,10 @@
       const age = child2 && child2.birthdate ? ageAt(child2, y.start) : null;
       y.sub = `${y.memories.length} ${y.memories.length === 1 ? 'blaadje' : 'blaadjes'}` +
               (age !== null && !modeLeven ? ` · ${child2.name} ${y.isCurrent ? 'is' : 'was'} ${Math.max(0, age)}` : '');
+      // Jonge jaren zijn kleine boompjes die met elk blaadje meegroeien
+      y.growth = y.isCurrent
+        ? Math.min(1, 0.5 + y.memories.length * 0.045 + y.uptoMonth * 0.02)
+        : 1;
     });
     S.years = years;
     return years;
@@ -187,7 +194,10 @@
     $('#corner-search').classList.toggle('weg', level === 'blad');
     $('#corner-settings').classList.toggle('weg', level === 'blad');
     const mems = S.memories.filter(m => m.childId === S.activeChildId);
-    sunBtn.classList.toggle('lokkend', mems.length === 0);
+    // De zon lokt zachtjes als het bos leeg is, of al dagen stil
+    const laatste = mems.length ? new Date(mems[mems.length - 1].date) : null;
+    const stil = laatste ? (Date.now() - laatste) / 864e5 >= 5 : false;
+    sunBtn.classList.toggle('lokkend', mems.length === 0 || stil);
     const hint = $('.eerste-hint');
     if (hint) hint.remove();
     if (level === 'bos' && mems.length === 0) {
@@ -238,7 +248,7 @@
     $('#boom-titel').textContent = yr.label;
     $('#boom-sub').textContent = yr.sub;
     const art = $('#boom-art');
-    Scene.renderTree(art, yr.memories, { uptoMonth: yr.uptoMonth, interactive: true, seedBase: 17 });
+    Scene.renderTree(art, yr.memories, { uptoMonth: yr.uptoMonth, interactive: true, seedBase: 17, growth: yr.growth ?? 1 });
     // Net bewaard? Dan dwarrelt het blaadje op zijn plek
     if (S.landingId) {
       const idx = yr.memories.findIndex(m => m.id === S.landingId);
@@ -268,18 +278,15 @@
     if (!mem) return;
     Player.stopAll();
     S.currentLeafIdx = idx;
-    const kleur = mem.isFavorite ? Scene.GOUD : Scene.SEASON[Scene.seasonOf(new Date(mem.date).getMonth())][0];
-    $('#blad-art').innerHTML =
-      `<svg viewBox="0 0 240 180">
-         <path d="M120 10 C 120 44 120 106 120 158" stroke="${mem.isFavorite ? '#C9A23E' : '#A8763E'}" stroke-width="3" fill="none"/>
-         <ellipse cx="120" cy="80" rx="95" ry="60" fill="${kleur}" opacity="0.96"/>
-         <path d="M50 80 Q 120 66 190 80" stroke="rgba(90,70,40,0.14)" stroke-width="2" fill="none"/>
+    const kleur = mem.isFavorite ? Scene.GOUD : Scene.leafColor(mem, 0);
+    $('#blad-artje').innerHTML =
+      `<svg viewBox="0 0 52 40">
+         <path d="M26 3 v34" stroke="${mem.isFavorite ? '#C9A23E' : '#A8763E'}" stroke-width="2.4" fill="none"/>
+         <ellipse cx="26" cy="20" rx="22" ry="14" fill="${kleur}" opacity="0.96" transform="rotate(-10 26 20)"/>
          ${mem.isFavorite ? `
-           <path class="spark" style="--sd:0.4s" d="M28,22 l1.2,3 3,1.2 -3,1.2 -1.2,3 -1.2,-3 -3,-1.2 3,-1.2 Z" fill="#FFF3C4"/>
-           <path class="spark" style="--sd:2.2s" d="M212,36 l1.2,3 3,1.2 -3,1.2 -1.2,3 -1.2,-3 -3,-1.2 3,-1.2 Z" fill="#FFF3C4"/>
-           <path class="spark" style="--sd:3.8s" d="M196,132 l1.2,3 3,1.2 -3,1.2 -1.2,3 -1.2,-3 -3,-1.2 3,-1.2 Z" fill="#FFF3C4"/>` : ''}
-       </svg>
-       ${mem.audioId ? `<button id="blad-play" class="pulse" aria-label="Afspelen">${svg('i-play')}</button>` : ''}`;
+           <path class="spark" style="--sd:0.4s" d="M8,6 l1,2.4 2.4,1 -2.4,1 -1,2.4 -1,-2.4 -2.4,-1 2.4,-1 Z" fill="#FFF3C4"/>
+           <path class="spark" style="--sd:2.4s" d="M45,26 l1,2.4 2.4,1 -2.4,1 -1,2.4 -1,-2.4 -2.4,-1 2.4,-1 Z" fill="#FFF3C4"/>` : ''}
+       </svg>`;
     $('#blad-titel').textContent = mem.title || '';
     const quoteEl = $('#blad-quote');
     quoteEl.textContent = mem.text ? `“${mem.text}”` : '';
@@ -298,6 +305,8 @@
     if (mem.audioId) {
       $('#blad-progress').style.width = '0%';
       $('#blad-time').textContent = mem.audioDuration ? fmtTime(mem.audioDuration) : '';
+      $('#blad-play use').setAttribute('href', '#i-play');
+      $('#blad-play').classList.add('pulse');
       $('#blad-play').onclick = () => {
         Player.toggle(mem.id, (t, dur) => {
           $('#blad-progress').style.width = dur ? `${(t / dur) * 100}%` : '0%';
@@ -548,7 +557,7 @@
   function catSelectHTML(selectedId) {
     return `<div class="cat-wrap" id="cat-select">
       ${S.categories.map(c => `
-        <button type="button" class="cat-chip ${c.id === selectedId ? 'active' : ''}" data-cat="${c.id}">
+        <button type="button" class="cat-chip ${c.id === selectedId ? 'active' : ''}" data-cat="${c.id}" style="--accent:${c.color}">
           ${svg(catMerk(c))}${esc(c.name)}
         </button>`).join('')}
     </div>`;
@@ -669,6 +678,11 @@
       S.landingId = id;
       const yr = S.years.find(y => y.memories.some(m => m.id === id));
       if (yr) setTimeout(() => openBoom(yr.key, innerWidth * 0.6, innerHeight * 0.5), 60);
+      // Elk tiende blaadje is een klein feestje: wind + een fluistering
+      const count = S.memories.filter(m => m.childId === memory.childId).length;
+      if (count > 0 && count % 10 === 0) {
+        setTimeout(() => { Scene.breeze(stage); fluister(`het ${count}e blaadje van jullie bos`); }, 1600);
+      }
       renderBackupNudgeCheck();
     });
   }
@@ -708,7 +722,7 @@
     openSheet(`
       <h2 class="sheet-title">Momentje bewerken</h2>
       <input type="text" class="veld-titel" id="edit-title" value="${esc(m.title)}" placeholder="Titel">
-      <textarea class="veld-tekst" id="edit-text" placeholder="Wat werd er gezegd of gedaan?">${esc(m.text || '')}</textarea>
+      <textarea class="veld-tekst groot" id="edit-text" placeholder="Wat werd er gezegd of gedaan?">${esc(m.text || '')}</textarea>
       ${childSelectHTML(m.childId)}
       ${catSelectHTML(m.categoryId)}
       <div class="datum-rij"><input type="date" id="edit-date" class="datum-chip" value="${date}"></div>
@@ -823,13 +837,76 @@
     });
   }
 
-  // ============ Zoeken ============
+  // ============ Categorie bewerken ============
+  const CAT_KLEUREN = ['#4D99E6', '#E6992D', '#66BB6A', '#E6667F', '#9B7ED9', '#4DB6AC', '#D97742', '#8A9B6E'];
+  function openCatForm(cat) {
+    if (!cat) return;
+    openSheet(`
+      <h2 class="sheet-title">Categorie</h2>
+      <input type="text" class="veld-titel" id="cat-naam" value="${esc(cat.name)}" placeholder="Naam">
+      <div class="color-row" style="margin:18px 0 6px">
+        ${CAT_KLEUREN.map(k => `<button type="button" class="color-swatch ${k === cat.color ? 'active' : ''}" data-color="${k}" style="background:${k}" aria-label="Kleur"></button>`).join('')}
+      </div>
+      <p class="leeg-melding" style="padding:6px 4px 0;text-align:left">De kleur zie je op de blaadjes zodra bladkleuren op “Categorieën” staat.</p>
+      <div class="btn-stack">
+        <button class="btn" id="cat-save">${svg('i-check')}Bewaren</button>
+      </div>
+    `);
+    $$('#sheet .color-swatch').forEach(b => b.addEventListener('click', () => {
+      $$('#sheet .color-swatch').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    }));
+    $('#cat-save').addEventListener('click', async () => {
+      const naam = $('#cat-naam').value.trim();
+      if (!naam) { toast('Vul een naam in'); return; }
+      cat.name = naam;
+      cat.color = $('#sheet .color-swatch.active')?.dataset.color || cat.color;
+      await DB.put('categories', cat);
+      await loadAll();
+      closeSheet();
+      renderBos();
+      toast('Categorie bijgewerkt ✓');
+    });
+  }
+
+  // ============ Fluisteringen: kleine magie, nooit druk ============
+  function fluister(text, { onTap = null, ms = 6500 } = {}) {
+    $$('.fluister').forEach(el => el.remove());
+    const el = document.createElement('button');
+    el.className = 'fluister';
+    el.textContent = text;
+    if (onTap) el.addEventListener('click', () => { el.remove(); onTap(); });
+    stage.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('zichtbaar'));
+    setTimeout(() => { el.classList.remove('zichtbaar'); setTimeout(() => el.remove(), 700); }, ms);
+  }
+
+  /* Vandaag, jaren geleden: een momentje van precies deze dag komt even terug */
+  async function jubileumCheck() {
+    const vandaag = new Date();
+    const key = `${vandaag.getFullYear()}-${vandaag.getMonth()}-${vandaag.getDate()}`;
+    if (await DB.getSetting('jubileumShownOn') === key) return;
+    const treffers = S.memories.filter(m => {
+      const d = new Date(m.date);
+      return m.childId === S.activeChildId &&
+        d.getDate() === vandaag.getDate() && d.getMonth() === vandaag.getMonth() &&
+        d.getFullYear() < vandaag.getFullYear();
+    });
+    if (!treffers.length) return;
+    const m = treffers[treffers.length - 1];
+    const jaren = vandaag.getFullYear() - new Date(m.date).getFullYear();
+    await DB.setSetting('jubileumShownOn', key);
+    setTimeout(() => fluister(
+      `vandaag, ${jaren === 1 ? 'een jaar' : jaren + ' jaar'} geleden: “${m.title}”`,
+      { onTap: () => openBladById(m.id), ms: 9000 }), 1400);
+  }
+
+  // ============ Zoeken: de hele tijdlijn, direct zichtbaar ============
   $('#corner-search').addEventListener('click', () => {
     openSheet(`
-      <h2 class="sheet-title">Zoeken</h2>
-      <div class="field"><input type="text" id="zoek-input" placeholder="Zoek in momentjes…" autocomplete="off"></div>
-      <div class="cat-wrap" id="zoek-chips" style="justify-content:flex-start;margin:0 0 14px">
-        ${S.categories.map(c => `<button class="cat-chip" data-cat="${c.id}">${svg(catMerk(c))}${esc(c.name)}</button>`).join('')}
+      <div class="field" style="margin:0 0 10px"><input type="text" id="zoek-input" placeholder="Zoek in momentjes…" autocomplete="off"></div>
+      <div class="cat-wrap" id="zoek-chips" style="justify-content:flex-start;margin:0 0 4px">
+        ${S.categories.map(c => `<button class="cat-chip" data-cat="${c.id}" style="--accent:${c.color}">${svg(catMerk(c))}${esc(c.name)}</button>`).join('')}
         <button class="filter-chip" data-fav style="--accent:#D9AF3B">Goud</button>
       </div>
       <div id="zoek-uit"></div>
@@ -842,14 +919,23 @@
       const ql = q.trim().toLowerCase();
       if (ql) res = res.filter(m => (m.title || '').toLowerCase().includes(ql) || (m.text || '').toLowerCase().includes(ql));
       res = res.slice().reverse();
-      $('#zoek-uit').innerHTML = res.length ? res.map(m => {
-        const kleur = m.isFavorite ? Scene.GOUD : Scene.SEASON[Scene.seasonOf(new Date(m.date).getMonth())][0];
-        return `
-        <button class="zoek-rij" data-open="${m.id}">
-          <svg class="zoek-blad" viewBox="0 0 26 18"><ellipse cx="13" cy="9" rx="11" ry="7" fill="${kleur}" transform="rotate(-12 13 9)"/></svg>
-          <span class="grow"><span class="zoek-titel">${esc(m.title)}</span><span class="zoek-sub">${fmtDate(m.date)}</span></span>
-        </button>`;
-      }).join('') : `<p class="leeg-melding">${ql || cat || fav ? 'Niets gevonden.' : 'Typ een woord of kies een filter.'}</p>`;
+      let html = '', maand = '';
+      for (const m of res) {
+        const d = new Date(m.date);
+        const mk = `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+        if (mk !== maand) { html += `<p class="zoek-maand">${mk}</p>`; maand = mk; }
+        html += `
+          <button class="m-card" data-open="${m.id}">
+            <svg class="m-blad" viewBox="0 0 34 26"><ellipse cx="17" cy="13" rx="14" ry="9" fill="${Scene.leafColor(m, 0)}" transform="rotate(-12 17 13)"/></svg>
+            <span class="grow">
+              <span class="m-titel">${esc(m.title)}</span>
+              ${m.text ? `<span class="m-tekst">${esc(m.text)}</span>` : ''}
+              <span class="m-sub">${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}${m.audioDuration ? ` · ${fmtTime(m.audioDuration)}` : ''}</span>
+            </span>
+          </button>`;
+      }
+      $('#zoek-uit').innerHTML = html ||
+        `<p class="leeg-melding">${ql || cat || fav ? 'Niets gevonden.' : 'Nog geen momentjes.'}</p>`;
       $$('#zoek-uit [data-open]').forEach(b => b.addEventListener('click', () => {
         closeSheet();
         openBladById(b.dataset.open);
@@ -865,7 +951,6 @@
       fav = !fav; e.currentTarget.classList.toggle('active', fav); run();
     });
     run();
-    setTimeout(() => $('#zoek-input').focus(), 350);
   });
 
   function openBladById(id) {
@@ -902,8 +987,28 @@
       </div>
 
       <div class="settings-group">
+        <p class="settings-label">Categorieën</p>
+        <div class="settings-card">
+          ${S.categories.map(c => `
+            <button class="settings-row" data-edit-cat="${c.id}">
+              ${svg(catMerk(c))}
+              <span class="grow">${esc(c.name)}</span>
+              <span class="kleur-stip" style="background:${c.color}"></span>
+            </button>`).join('')}
+        </div>
+      </div>
+
+      <div class="settings-group">
         <p class="settings-label">Het bos</p>
         <div class="settings-card">
+          <div class="settings-row" style="cursor:default">
+            ${svg('i-leafcat')}
+            <span class="grow">Bladkleuren<span class="sub">Waar de kleuren van de blaadjes over vertellen</span></span>
+            <select id="leaf-color-mode" class="settings-select">
+              <option value="seizoen" ${Scene.colorMode === 'seizoen' ? 'selected' : ''}>Seizoenen</option>
+              <option value="categorie" ${Scene.colorMode === 'categorie' ? 'selected' : ''}>Categorieën</option>
+            </select>
+          </div>
           <div class="settings-row" style="cursor:default">
             ${svg('i-leafcat')}
             <span class="grow">Bomen per<span class="sub">${anyBirthdate ? 'Levensjaar = van verjaardag tot verjaardag' : 'Vul een geboortedatum in voor levensjaren'}</span></span>
@@ -949,7 +1054,7 @@
         <p class="settings-label">Over</p>
         <div class="settings-card">
           <div class="settings-row" style="cursor:default">
-            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.2 · elk blaadje één herinnering</span></span>
+            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.3 · elk blaadje één herinnering</span></span>
           </div>
         </div>
       </div>
@@ -957,6 +1062,14 @@
 
     $$('#sheet [data-edit-kind]').forEach(b => b.addEventListener('click', () => openChildForm(childById(b.dataset.editKind))));
     $('#settings-add-kind').addEventListener('click', () => openChildForm());
+    $$('#sheet [data-edit-cat]').forEach(b => b.addEventListener('click', () => openCatForm(catById(b.dataset.editCat))));
+    $('#leaf-color-mode').addEventListener('change', async (e) => {
+      Scene.colorMode = e.target.value;
+      await DB.setSetting('leafColorMode', Scene.colorMode);
+      document.body.classList.toggle('cat-kleur', Scene.colorMode === 'categorie');
+      closeSheet();
+      renderBos();
+    });
     $('#settings-export').addEventListener('click', doExport);
     $('#settings-import').addEventListener('click', () => $('#import-file').click());
     $('#backup-interval').addEventListener('change', async (e) => {
@@ -1056,7 +1169,7 @@
     await DB.ensureDefaults();
     await loadAll();
     if (S.children.length === 0) showOnboarding();
-    else renderBos();
+    else { renderBos(); jubileumCheck(); }
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
