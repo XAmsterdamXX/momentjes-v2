@@ -79,11 +79,14 @@ const DB = (() => {
     }
   }
 
+  /* Categoriekleuren zijn tinten die écht aan bladeren voorkomen
+     (bloesem, koper, loof, roest) — zodat een boom in categorie-
+     kleurmodus geen kerstboom wordt maar een gemengde boom. */
   const DEFAULT_CATEGORIES = [
-    { id: 'cat-uitspraak', name: 'Uitspraak', icon: 'quote',    color: '#4D99E6', sortOrder: 0, isDefault: true },
-    { id: 'cat-vraag',     name: 'Vraag',     icon: 'question', color: '#E6992D', sortOrder: 1, isDefault: true },
-    { id: 'cat-ervaring',  name: 'Ervaring',  icon: 'leaf',     color: '#66BB6A', sortOrder: 2, isDefault: true },
-    { id: 'cat-mijlpaal',  name: 'Mijlpaal',  icon: 'flag',     color: '#E6667F', sortOrder: 3, isDefault: true },
+    { id: 'cat-uitspraak', name: 'Uitspraak', icon: 'quote',    color: '#D9899B', sortOrder: 0, isDefault: true },
+    { id: 'cat-vraag',     name: 'Vraag',     icon: 'question', color: '#C0764C', sortOrder: 1, isDefault: true },
+    { id: 'cat-ervaring',  name: 'Ervaring',  icon: 'leaf',     color: '#7FA95B', sortOrder: 2, isDefault: true },
+    { id: 'cat-mijlpaal',  name: 'Mijlpaal',  icon: 'flag',     color: '#B85C4A', sortOrder: 3, isDefault: true },
   ];
 
   const CHILD_COLORS = ['#E6667F', '#4D99E6', '#E6992D', '#66BB6A', '#9B7ED9', '#4DB6AC'];

@@ -838,7 +838,8 @@
   }
 
   // ============ Categorie bewerken ============
-  const CAT_KLEUREN = ['#4D99E6', '#E6992D', '#66BB6A', '#E6667F', '#9B7ED9', '#4DB6AC', '#D97742', '#8A9B6E'];
+  // Alleen tinten die aan echte bladeren voorkomen — geen kerstboomkleuren
+  const CAT_KLEUREN = ['#D9899B', '#C0764C', '#7FA95B', '#B85C4A', '#D9A441', '#5E8E4E', '#96BA6B', '#8E9E5A'];
   function openCatForm(cat) {
     if (!cat) return;
     openSheet(`
@@ -1054,7 +1055,7 @@
         <p class="settings-label">Over</p>
         <div class="settings-card">
           <div class="settings-row" style="cursor:default">
-            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.3 · elk blaadje één herinnering</span></span>
+            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.4 · elk blaadje één herinnering</span></span>
           </div>
         </div>
       </div>
@@ -1165,8 +1166,19 @@
   }
 
   // ============ Start ============
+  /* Eenmalig: oude felle standaardkleuren (blauw/fel) worden blad-echte
+     tinten. Alleen exacte oude defaults worden vervangen — eigen keuzes
+     blijven staan. */
+  async function migrateCatColors() {
+    const map = { '#4D99E6': '#D9899B', '#E6992D': '#C0764C', '#66BB6A': '#7FA95B', '#E6667F': '#B85C4A' };
+    for (const c of await DB.getAll('categories')) {
+      if (map[c.color]) { c.color = map[c.color]; await DB.put('categories', c); }
+    }
+  }
+
   async function init() {
     await DB.ensureDefaults();
+    await migrateCatColors();
     await loadAll();
     if (S.children.length === 0) showOnboarding();
     else { renderBos(); jubileumCheck(); }
