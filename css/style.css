@@ -418,7 +418,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
   transition: all 0.16s ease;
 }
 .cat-chip .icon { width: 15px; height: 15px; }
-.cat-chip.active { background: var(--groen); border-color: var(--groen); color: #FDF8EE; }
+.cat-chip.active { background: var(--accent, var(--groen)); border-color: var(--accent, var(--groen)); color: #FDF8EE; }
 /* Proefmodus: categorieën dragen hun eigen kleur — ook als chip */
 body.cat-kleur .cat-chip { color: color-mix(in srgb, var(--accent, var(--inkt-zacht)) 78%, #4A4030); background: color-mix(in srgb, var(--accent, #fff) 9%, #fff); border-color: color-mix(in srgb, var(--accent, var(--lijn)) 32%, transparent); }
 body.cat-kleur .cat-chip.active { background: var(--accent, var(--groen)); border-color: var(--accent, var(--groen)); color: #fff; }
@@ -551,25 +551,45 @@ input.datum-chip::-webkit-calendar-picker-indicator { opacity: 0.4; }
 .cat-grid { display: grid; grid-template-columns: 1fr 1fr; }
 .cat-grid .cat-chip { justify-content: center; }
 
+/* Sheet-kop: titel + compacte terugluister-knop op één rustige regel */
+.sheet-kop { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.sheet-kop .sheet-title { margin-bottom: 0; flex: 1; }
+.mini-play {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: #fff; border: 1.5px solid var(--lijn);
+  color: #A8763E;
+  display: flex; align-items: center; justify-content: center;
+}
+.mini-play .icon { width: 15px; height: 15px; margin-left: 1px; }
+.mini-duur { font-size: 12.5px; color: var(--inkt-vaag); font-variant-numeric: tabular-nums; }
+
 /* Twee knoppen broederlijk naast elkaar */
 .btn-rij { display: flex; gap: 10px; margin-top: 20px; }
 .btn-rij .btn { flex: 1.6; }
 .btn-rij .btn-danger, .btn-rij .btn-secondary { flex: 1; }
 
-/* Het wolkje op het homescherm: bedenk je verhaal, tik en vertel */
+/* Het wolkje: een échte wolk in de lucht — bedenk je verhaal, tik en vertel */
 .wolk {
   position: absolute; z-index: 28;
-  top: calc(var(--safe-top) + 78px); left: 18px;
-  max-width: 235px;
+  top: calc(var(--safe-top) + 132px); left: 22px;
+  max-width: 232px;
   display: flex; align-items: flex-start; gap: 10px;
-  background: rgba(253, 248, 238, 0.78);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  border-radius: 20px 20px 20px 6px;
-  padding: 13px 14px;
-  box-shadow: 0 4px 18px rgba(80, 60, 30, 0.12);
+  background: rgba(253, 250, 242, 0.92);
+  border-radius: 28px;
+  padding: 15px 16px;
+  box-shadow: 0 6px 22px rgba(80, 60, 30, 0.13);
   text-align: left;
   transition: opacity 0.4s ease;
+  animation: wolkzweef 7s ease-in-out infinite alternate;
 }
+/* Twee bollingen bovenop maken de kaart een wolk */
+.wolk::before, .wolk::after {
+  content: ""; position: absolute; z-index: -1;
+  background: rgba(253, 250, 242, 0.92); border-radius: 50%;
+}
+.wolk::before { width: 44px; height: 44px; top: -18px; left: 30px; }
+.wolk::after { width: 62px; height: 62px; top: -26px; left: 66px; }
+@keyframes wolkzweef { from { translate: 0 0; } to { translate: 5px -6px; } }
 #wolk-tekst {
   font-family: var(--serif); font-style: italic;
   font-size: 14.5px; line-height: 1.5; color: var(--inkt);

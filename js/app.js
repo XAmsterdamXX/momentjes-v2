@@ -137,10 +137,15 @@
       const age = child2 && child2.birthdate ? ageAt(child2, y.start) : null;
       y.sub = `${y.memories.length} ${y.memories.length === 1 ? 'blaadje' : 'blaadjes'}` +
               (age !== null && !modeLeven ? ` · ${child2.name} ${y.isCurrent ? 'is' : 'was'} ${Math.max(0, age)}` : '');
-      // Jonge jaren zijn kleine boompjes die met elk blaadje meegroeien
+      // De boom groeit met zijn BLAADJES, niet met de kalender: weinig
+      // vastgelegd = klein boompje. De stam reikt tot de hoogste maand
+      // mét inhoud (+ een verse groeitip in het lopende jaar).
+      const maxLeafMonth = y.memories.length
+        ? Math.max(...y.memories.map(m => y.monthOf(m.date))) : 0;
+      if (isCurrent) y.uptoMonth = Math.min(y.uptoMonth, Math.min(11, maxLeafMonth + 1));
       y.growth = y.isCurrent
-        ? Math.min(1, 0.5 + y.memories.length * 0.045 + y.uptoMonth * 0.02)
-        : 1;
+        ? Math.min(1, 0.35 + y.memories.length * 0.06)
+        : Math.min(1, 0.55 + y.memories.length * 0.045);
     });
     S.years = years;
     return years;
@@ -205,23 +210,16 @@
     sunBtn.classList.toggle('weg', level === 'blad');
     $('#corner-search').classList.toggle('weg', level === 'blad');
     $('#corner-settings').classList.toggle('weg', level === 'blad');
-    // Het wolkje woont alleen in het bos
+    // Het wolkje hoort bij de lucht: in het bos én bij de boom.
+    // Het wolkje ís de uitnodiging — geen losse hint-tekst meer.
     const wolk = $('#wolk');
-    wolk.hidden = level !== 'bos' || !child;
+    wolk.hidden = level === 'blad' || !child;
     if (!wolk.hidden && !huidigeVonk) nieuweVonk();
     const mems = S.memories.filter(m => m.childId === S.activeChildId);
     // De zon lokt zachtjes als het bos leeg is, of al dagen stil
     const laatste = mems.length ? new Date(mems[mems.length - 1].date) : null;
     const stil = laatste ? (Date.now() - laatste) / 864e5 >= 5 : false;
     sunBtn.classList.toggle('lokkend', mems.length === 0 || stil);
-    const hint = $('.eerste-hint');
-    if (hint) hint.remove();
-    if (level === 'bos' && mems.length === 0) {
-      const h = document.createElement('p');
-      h.className = 'eerste-hint';
-      h.textContent = 'tik op de zon voor je eerste momentje';
-      stage.appendChild(h);
-    }
   }
 
   function renderBos() {
@@ -693,6 +691,20 @@
     };
   }
 
+  /* Compacte terugluister-knop in de sheet-kop: één rondje, geen balk */
+  function bindMiniPlayer(sel, blob) {
+    const btn = $(sel);
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    const setIcon = (playing) => btn.querySelector('use').setAttribute('href', playing ? '#i-pause' : '#i-play');
+    audio.onended = () => setIcon(false);
+    btn.addEventListener('click', () => {
+      if (audio.paused) audio.play().then(() => setIcon(true)).catch(() => toast('Audio kan niet worden afgespeeld'));
+      else { audio.pause(); setIcon(false); }
+    });
+    return () => { try { audio.pause(); } catch (_) {} URL.revokeObjectURL(url); };
+  }
+
   function bindPreviewPlayer(rootSel, blob, duration) {
     const chip = $(`${rootSel} .play-chip`);
     const bar = $(`${rootSel} .audio-progress i`);
@@ -724,11 +736,10 @@
     const fallbackTitle = `Momentje van ${WEEKDAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()].slice(0, 3)}`;
     const title = autoTitle(recording.transcript) || fallbackTitle;
     openSheet(`
-      <h2 class="sheet-title">Momentje bewaren</h2>
-      <div class="audio-player" id="save-player">
-        <span class="play-chip">${svg('i-play')}</span>
-        <div class="audio-progress"><i></i></div>
-        <span class="audio-time">${fmtTime(recording.duration || 0)}</span>
+      <div class="sheet-kop">
+        <h2 class="sheet-title">Momentje bewaren</h2>
+        <button class="mini-play" id="save-play" aria-label="Terugluisteren">${svg('i-play')}</button>
+        <span class="mini-duur">${fmtTime(recording.duration || 0)}</span>
       </div>
       <div class="tekst-wrap">
         <input type="text" class="veld-titel" id="save-title" value="${esc(title)}" placeholder="Titel">
@@ -749,7 +760,7 @@
     bindCatSelect();
     bindChildSelect();
     bindDatumRij('save');
-    sheetCleanup = bindPreviewPlayer('#save-player', recording.blob, recording.duration);
+    sheetCleanup = bindMiniPlayer('#save-play', recording.blob);
 
     $('#save-discard').addEventListener('click', async () => {
       if (await appConfirm('Weet je zeker dat je deze opname wilt weggooien?', { confirmText: 'Weggooien', danger: true })) closeSheet();
@@ -781,6 +792,7 @@
       DB.requestPersistence();
       await loadAll();
       closeSheet();
+      nieuweVonk(); // het wolkje stelt meteen een verse vraag
       // Het nieuwe blaadje dwarrelt op zijn plek in de juiste boom
       S.activeChildId = memory.childId;
       renderBos();
@@ -1175,7 +1187,7 @@
         <p class="settings-label">Over</p>
         <div class="settings-card">
           <div class="settings-row" style="cursor:default">
-            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.6 · elk blaadje één herinnering</span></span>
+            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.7 · elk blaadje één herinnering</span></span>
           </div>
         </div>
       </div>
@@ -1258,7 +1270,8 @@
       ['“opa is de baas', 'van alle opa’s, toch?”'],
       ['“de maan loopt met ons', 'mee naar huis”'],
     ];
-    const obQuote = OB_QUOTES[Math.floor(Math.random() * OB_QUOTES.length)];
+    let obIdx = Math.floor(Math.random() * OB_QUOTES.length);
+    const obQuote = OB_QUOTES[obIdx];
     $('#onboarding-inner').innerHTML = `
       <!-- Het punt van de app in één doorlopende animatie:
            iets kleins & grappigs → één tik op de zon → een blaadje erbij -->
@@ -1266,8 +1279,8 @@
         <g class="ob-beat ob-b1">
           <rect x="30" y="34" width="176" height="52" rx="16" fill="#FDF8EE" stroke="rgba(84,69,47,0.14)"/>
           <path d="M62 86 l-8 14 l20 -14 Z" fill="#FDF8EE"/>
-          <text x="118" y="56" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">${obQuote[0]}</text>
-          <text x="118" y="74" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">${obQuote[1]}</text>
+          <text id="ob-q1" x="118" y="56" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">${obQuote[0]}</text>
+          <text id="ob-q2" x="118" y="74" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">${obQuote[1]}</text>
         </g>
         <g class="ob-beat ob-b2">
           <circle cx="140" cy="66" r="30" fill="#F0A45A"/>
@@ -1279,6 +1292,7 @@
           <path d="M139 92 C 122 82 110 74 102 58" fill="none" stroke="#8A6F52" stroke-width="3.6" stroke-linecap="round"/>
           <ellipse cx="102" cy="54" rx="11" ry="7" fill="#96BA6B" transform="rotate(-22 102 54)"/>
           <ellipse class="ob-nieuwblad" cx="140" cy="52" rx="11" ry="7" fill="#DBA63F" transform="rotate(-6 140 52)"/>
+          <g id="ob-extra"></g>
         </g>
       </svg>
       <h1 class="ob-title">Momentjes</h1>
@@ -1294,7 +1308,30 @@
       $$('#onboarding .color-swatch').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
     }));
+    // Elke lus een nieuwe uitspraak — en de boom houdt de blaadjes bij
+    const OB_EXTRA = [
+      { x: 168, y: 64, r: 16, f: '#7FA95B' }, { x: 116, y: 44, r: -8, f: '#B85C4A' },
+      { x: 160, y: 42, r: 10, f: '#8A5A62' }, { x: 90, y: 68, r: -18, f: '#DBA63F' },
+    ];
+    let obLeaves = 0;
+    const obTimer = setInterval(() => {
+      obIdx = (obIdx + 1) % OB_QUOTES.length;
+      const q1 = $('#ob-q1'), q2 = $('#ob-q2');
+      if (!q1) { clearInterval(obTimer); return; }
+      q1.textContent = OB_QUOTES[obIdx][0];
+      q2.textContent = OB_QUOTES[obIdx][1];
+      if (obLeaves < OB_EXTRA.length) {
+        const s = OB_EXTRA[obLeaves++];
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        el.setAttribute('cx', s.x); el.setAttribute('cy', s.y);
+        el.setAttribute('rx', 11); el.setAttribute('ry', 7);
+        el.setAttribute('fill', s.f);
+        el.setAttribute('transform', `rotate(${s.r} ${s.x} ${s.y})`);
+        $('#ob-extra').appendChild(el);
+      }
+    }, 9000);
     $('#ob-klaar').addEventListener('click', async () => {
+      clearInterval(obTimer);
       const name = $('#ob-naam').value.trim();
       if (!name) { $('#ob-naam').style.borderColor = '#C75450'; $('#ob-naam').focus(); return; }
       const child = {
