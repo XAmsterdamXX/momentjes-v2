@@ -284,6 +284,28 @@ input, textarea, select { font-family: inherit; font-size: 16px; color: var(--in
 #transcript-text { white-space: pre-wrap; }
 #transcript-text .interim { color: rgba(255, 255, 255, 0.5); }
 .speech-note { font-family: var(--font); font-size: 13px; color: rgba(255, 255, 255, 0.55); margin-top: 10px; }
+/* Vonkje: een vraag die je op verhaal helpt tijdens het opnemen */
+.vonk-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; margin-top: 10px; }
+.vonk {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: rgba(253, 248, 238, 0.1);
+  border: 1px solid rgba(253, 248, 238, 0.22);
+  border-radius: 20px; padding: 18px 20px;
+  max-width: 330px;
+}
+#vonk-tekst {
+  font-family: var(--serif); font-style: italic;
+  font-size: 19px; line-height: 1.55; color: #F3EBDC;
+}
+#vonk-nieuw {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(253, 248, 238, 0.14); color: rgba(253, 248, 238, 0.75);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+}
+#vonk-nieuw .icon { width: 16px; height: 16px; }
+.vonk-voetje { font-size: 12px; color: rgba(253, 248, 238, 0.45); }
+
 .record-controls { display: flex; align-items: center; justify-content: center; gap: 34px; margin-top: 22px; }
 .ctrl-btn {
   width: 58px; height: 58px; border-radius: 50%;
@@ -514,6 +536,40 @@ input.datum-chip::-webkit-calendar-picker-indicator { opacity: 0.4; }
   transition: opacity 0.7s ease, translate 0.7s ease;
 }
 .fluister.zichtbaar { opacity: 1; translate: 0 0; }
+
+/* Tekstvak met potloodje: 'dit mag je verbeteren' zonder woorden */
+.tekst-wrap { position: relative; }
+.tekst-potlood {
+  position: absolute; top: 10px; right: 12px;
+  width: 15px; height: 15px; color: var(--inkt-vaag);
+  pointer-events: none; fill: currentColor;
+}
+
+/* 'Weet de dag niet?' — maand of seizoen is genoeg */
+.datum-ongeveer {
+  font-size: 12.5px; font-style: italic; color: var(--inkt-vaag);
+  text-decoration: underline; text-underline-offset: 2px;
+  padding: 6px 4px; margin-left: 8px;
+}
+.approx-rij { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+
+/* Onboarding: het punt in beeld, drie beats in een lus */
+.ob-scene { width: 250px; height: 134px; margin: 0 auto 10px; display: block; overflow: visible; }
+.ob-beat { opacity: 0; }
+.ob-b1 { animation: obBeat1 9s ease-in-out infinite; }
+.ob-b2 { animation: obBeat2 9s ease-in-out infinite; }
+.ob-b3 { animation: obBeat3 9s ease-in-out infinite; }
+@keyframes obBeat1 { 3%, 30% { opacity: 1; } 0%, 36%, 100% { opacity: 0; } }
+@keyframes obBeat2 { 36%, 58% { opacity: 1; } 0%, 33%, 64%, 100% { opacity: 0; } }
+@keyframes obBeat3 { 64%, 94% { opacity: 1; } 0%, 61%, 98%, 100% { opacity: 0; } }
+.ob-tik { transform-box: fill-box; transform-origin: center; animation: obTik 9s ease-out infinite; }
+@keyframes obTik { 0%, 44% { transform: scale(1); opacity: 0; } 46% { opacity: 0.8; } 56%, 100% { transform: scale(1.9); opacity: 0; } }
+.ob-nieuwblad { transform-box: fill-box; transform-origin: center; animation: obBlad 9s ease-out infinite; }
+@keyframes obBlad {
+  0%, 64% { transform: translateY(-46px) rotate(-40deg); opacity: 0; }
+  72% { opacity: 1; }
+  80%, 100% { transform: none; opacity: 1; }
+}
 
 /* ===== Dialoog & toast ===== */
 .dialog-backdrop {

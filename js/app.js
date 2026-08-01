@@ -12,6 +12,18 @@
   const WEEKDAYS = ['zo','ma','di','wo','do','vr','za'];
   const fmtTime = (secs) => `${Math.floor(secs / 60)}:${String(Math.floor(secs % 60)).padStart(2, '0')}`;
   const fmtDate = (iso) => { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+  const SEIZOENEN = { lente: 3, zomer: 6, herfst: 9, winter: 0 }; // representatieve maand
+  /* "Weet je nog"-momentjes hebben vaak geen precieze dag — toon dan
+     eerlijk 'zomer 2024' of 'juni 2024' in plaats van een neppe datum */
+  function fmtWhen(mem) {
+    const d = new Date(mem.date);
+    if (mem.approx === 'seizoen') {
+      const s = Object.entries(SEIZOENEN).find(([, m]) => m === d.getMonth());
+      return `${s ? s[0] : MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    }
+    if (mem.approx === 'maand') return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    return fmtDate(mem.date);
+  }
   const svg = (id, cls = 'icon') => `<svg class="${cls}"><use href="#${id}"/></svg>`;
   const CAT_ICONS = { quote: 'i-quote', question: 'i-question', leaf: 'i-leafcat', flag: 'i-flag' };
   // Merktekens: monochrome lijniconen — kleur is in deze wereld van de
@@ -299,7 +311,7 @@
     const cat = catById(mem.categoryId) || {};
     $('#blad-meta').innerHTML =
       `${svg(catMerk(cat), 'meta-merk')}<span>${esc((cat.name || '').toLowerCase())}</span><span>·</span>` +
-      `<span>${new Date(mem.date).getDate()} ${MONTHS[new Date(mem.date).getMonth()]} ${new Date(mem.date).getFullYear()}</span>` +
+      `<span>${fmtWhen(mem)}</span>` +
       (age !== null ? `<span>·</span><span>${esc(child.name)} was ${Math.max(0, age)}</span>` : '');
     $('#blad-audio').hidden = !mem.audioId;
     if (mem.audioId) {
@@ -413,6 +425,41 @@
   // spraak-API bij het stoppen tóch niets teruggeeft (iOS-gril)
   let lastLiveText = '';
 
+  /* Vonkjes: vragen die je op verhaal helpen — altijd óver het kind
+     (derde persoon), zodat het later ook voorleest als een verhaal. */
+  const VONKEN = [
+    'Wat zei {naam} vandaag dat je niet wilt vergeten?',
+    'Welke vraag stelde {naam} laatst waar je om moest lachen?',
+    'Wat is typisch {naam}? Noem een voorbeeld.',
+    'Welk woord zegt {naam} nét verkeerd — en hoe klinkt dat?',
+    'Waar kan {naam} nu eindeloos mee bezig zijn?',
+    'Wat wil {naam} later worden — en waarom?',
+    'Weet je nog: {naam}’s eerste woordje? Hoe ging dat?',
+    'Wat deed {naam} vandaag voor het allereerst?',
+    'Waar moest {naam} vandaag om giechelen?',
+    'Welk verhaaltje of liedje wil {naam} stééds opnieuw?',
+    'Wat vroeg {naam} over hoe de wereld werkt?',
+    'Hoe zegt {naam} welterusten?',
+    'Wat is {naam}’s gekke gewoonte van dit moment?',
+    'Wie is {naam}’s beste vriendje — en wat doen ze samen?',
+    'Weet je nog: jullie laatste uitje? Wat deed {naam}?',
+    'Welke uitspraak van {naam} citeren jullie nog steeds?',
+    'Wat kan {naam} nu ineens helemaal zelf?',
+    'Waar is {naam} nu een beetje bang voor?',
+    'Wat zou {naam} doen met duizend euro?',
+    'Wat is {naam}’s lievelingsplek?',
+    'Welke logica van {naam} klopt eigenlijk best wel?',
+    'Wat wil je {naam} later kunnen vertellen over vandaag?',
+  ];
+  let vorigeVonk = -1;
+  function nieuweVonk() {
+    const naam = (activeChild() || {}).name || 'je kind';
+    let i;
+    do { i = Math.floor(Math.random() * VONKEN.length); } while (i === vorigeVonk && VONKEN.length > 1);
+    vorigeVonk = i;
+    $('#vonk-tekst').textContent = VONKEN[i].replaceAll('{naam}', naam);
+  }
+
   async function startRecording() {
     if (rec || recStarting) return;
     if (!Recorder.supported()) { toast('Opnemen wordt niet ondersteund in deze browser'); return; }
@@ -431,9 +478,7 @@
     const overlay = $('#record-overlay');
     overlay.hidden = false;
     $('#record-timer').textContent = '0:00';
-    $('#transcript-text').innerHTML = '';
-    $('#transcript-placeholder').hidden = false;
-    $('#speech-note').hidden = true;
+    nieuweVonk();
     $('.rec-dot').classList.remove('paused');
     $('#record-pause use').setAttribute('href', '#i-pause');
 
@@ -453,21 +498,17 @@
       }
     };
 
+    // De tekst schrijft ONzichtbaar mee: live meelezen zet mensen aan het
+    // corrigeren van hun eigen zinnen — dat hoort pas op het bewaarscherm
     lastLiveText = '';
     speech = Speech.create('nl-NL');
     if (speech) {
-      speech.onUpdate = (final, interim) => {
-        lastLiveText = `${final} ${interim}`.trim();
-        $('#transcript-placeholder').hidden = !!(final || interim);
-        $('#transcript-text').innerHTML = `${esc(final)} <span class="interim">${esc(interim)}</span>`;
-        const box = $('#live-transcript');
-        box.scrollTop = box.scrollHeight;
-      };
-      speech.onUnavailable = () => { if (rec === r) $('#speech-note').hidden = false; };
+      speech.onUpdate = (final, interim) => { lastLiveText = `${final} ${interim}`.trim(); };
       const sp = speech;
       setTimeout(() => { if (rec === r && speech === sp) sp.start(); }, 350);
-    } else $('#speech-note').hidden = false;
+    }
   }
+  $('#vonk-nieuw').addEventListener('click', nieuweVonk);
 
   async function stopRecording(save) {
     if (!rec) return;
@@ -515,7 +556,8 @@
     'naar van voor met bij op in uit aan af om over onder tussen tegen door per te ter dan toen nu hier daar er ' +
     'waar wat wie hoe waarom omdat terwijl als zei zegt zeggen gezegd vroeg vraagt vragen vertelde vertelt vertellen ' +
     'vandaag vanochtend vanmiddag vanavond vanmorgen gisteren eergisteren net zonet zojuist even gewoon eerst weer steeds ' +
-    'nou dus oké oke eh uh ehm uhm ja nee hoi hallo mijn jouw zijn haar hun ie t m dr zn ze').split(' '));
+    'nou dus oké oke eh uh ehm uhm ja nee hoi hallo mijn jouw zijn haar hun ie t m dr zn ze ' +
+    'weet weten wist dacht dachten denkt denken alle alles allemaal iets echt').split(' '));
   function autoTitle(text) {
     if (!text) return '';
     const words = text.replace(/[.!?…,;:'"„”]+/g, ' ').split(/\s+/).filter(Boolean);
@@ -587,6 +629,51 @@
   }
   const selectedChild = () => $('#child-select .filter-chip.active')?.dataset.child || S.activeChildId;
 
+  /* Datumkeuze met een 'ongeveer'-stand: oude herinneringen weet je vaak
+     alleen per maand of seizoen — snelheid boven perfectionisme */
+  function datumRijHTML(prefix, dateVal, mem = null) {
+    const now = new Date();
+    const jaren = [];
+    for (let j = now.getFullYear(); j >= now.getFullYear() - 14; j--) jaren.push(j);
+    const selM = mem && mem.approx ? new Date(mem.date).getMonth() : null;
+    const selJ = mem ? new Date(mem.date).getFullYear() : now.getFullYear();
+    const selPeriode = mem && mem.approx === 'seizoen'
+      ? 's-' + (Object.entries(SEIZOENEN).find(([, m]) => m === selM) || ['zomer'])[0]
+      : mem && mem.approx === 'maand' ? 'm-' + selM : null;
+    return `<div class="datum-rij">
+      <div id="${prefix}-exactrij" ${selPeriode ? 'hidden' : ''}>
+        <input type="date" id="${prefix}-date" class="datum-chip" value="${dateVal}">
+        <button type="button" class="datum-ongeveer" id="${prefix}-naar-approx">weet de dag niet?</button>
+      </div>
+      <div class="approx-rij" id="${prefix}-approxrij" ${selPeriode ? '' : 'hidden'}>
+        <select id="${prefix}-periode" class="settings-select">
+          ${['lente', 'zomer', 'herfst', 'winter'].map(s => `<option value="s-${s}" ${selPeriode === 's-' + s ? 'selected' : ''}>${s}</option>`).join('')}
+          ${MONTHS.map((m, i) => `<option value="m-${i}" ${selPeriode === 'm-' + i ? 'selected' : ''}>${m}</option>`).join('')}
+        </select>
+        <select id="${prefix}-jaar" class="settings-select">
+          ${jaren.map(j => `<option ${j === selJ ? 'selected' : ''}>${j}</option>`).join('')}
+        </select>
+        <button type="button" class="datum-ongeveer" id="${prefix}-naar-exact">precieze dag</button>
+      </div>
+    </div>`;
+  }
+  function bindDatumRij(prefix) {
+    $(`#${prefix}-naar-approx`).addEventListener('click', () => {
+      $(`#${prefix}-exactrij`).hidden = true; $(`#${prefix}-approxrij`).hidden = false;
+    });
+    $(`#${prefix}-naar-exact`).addEventListener('click', () => {
+      $(`#${prefix}-exactrij`).hidden = false; $(`#${prefix}-approxrij`).hidden = true;
+    });
+  }
+  /* → { when: Date, approx: null | 'maand' | 'seizoen' } of null = exact veld gebruiken */
+  function leesApproxDatum(prefix) {
+    if ($(`#${prefix}-approxrij`).hidden) return null;
+    const v = $(`#${prefix}-periode`).value;
+    const jaar = parseInt($(`#${prefix}-jaar`).value, 10);
+    const maand = v.startsWith('s-') ? SEIZOENEN[v.slice(2)] : parseInt(v.slice(2), 10);
+    return { when: new Date(jaar, maand, 15, 12, 0), approx: v.startsWith('s-') ? 'seizoen' : 'maand' };
+  }
+
   function dateInputValues(d = new Date()) {
     const p = (n) => String(n).padStart(2, '0');
     return {
@@ -633,10 +720,13 @@
         <span class="audio-time">${fmtTime(recording.duration || 0)}</span>
       </div>
       <input type="text" class="veld-titel" id="save-title" value="${esc(title)}" placeholder="Titel">
-      <textarea class="veld-tekst" id="save-text" placeholder="Wat werd er gezegd of gedaan?">${esc(recording.transcript)}</textarea>
+      <div class="tekst-wrap">
+        <textarea class="veld-tekst" id="save-text" placeholder="Wat werd er gezegd of gedaan?">${esc(recording.transcript)}</textarea>
+        ${svg('i-edit', 'tekst-potlood')}
+      </div>
       ${childSelectHTML(S.activeChildId)}
       ${catSelectHTML(S.categories[0]?.id)}
-      <div class="datum-rij"><input type="date" id="save-date" class="datum-chip" value="${date}"></div>
+      ${datumRijHTML('save', date)}
       <div class="btn-stack">
         <button class="btn" id="save-confirm">${svg('i-check')}Bewaren</button>
         <button class="btn btn-danger" id="save-discard">Opname weggooien</button>
@@ -644,6 +734,7 @@
     `, { locked: true });
     bindCatSelect();
     bindChildSelect();
+    bindDatumRij('save');
     sheetCleanup = bindPreviewPlayer('#save-player', recording.blob, recording.duration);
 
     $('#save-discard').addEventListener('click', async () => {
@@ -653,9 +744,12 @@
       const id = DB.uuid();
       const audioId = 'audio-' + id;
       await DB.put('audio', { id: audioId, blob: recording.blob, mime: recording.mime });
-      // Tijdstip is geen invulveld: vandaag = nu, een eerdere datum = midden op de dag
+      // Tijdstip is geen invulveld: vandaag = nu, een eerdere datum = midden
+      // op de dag; 'ongeveer' onthoudt alleen maand of seizoen
+      const ongeveer = leesApproxDatum('save');
       const picked = $('#save-date').value;
-      const when = picked === date ? new Date() : new Date(`${picked}T12:00`);
+      const when = ongeveer ? ongeveer.when
+        : picked === date ? new Date() : new Date(`${picked}T12:00`);
       const memory = {
         id,
         childId: selectedChild(),
@@ -668,6 +762,7 @@
         audioDuration: recording.duration,
         isFavorite: false,
       };
+      if (ongeveer) memory.approx = ongeveer.approx;
       await DB.put('memories', memory);
       DB.requestPersistence();
       await loadAll();
@@ -722,25 +817,34 @@
     openSheet(`
       <h2 class="sheet-title">Momentje bewerken</h2>
       <input type="text" class="veld-titel" id="edit-title" value="${esc(m.title)}" placeholder="Titel">
-      <textarea class="veld-tekst groot" id="edit-text" placeholder="Wat werd er gezegd of gedaan?">${esc(m.text || '')}</textarea>
+      <div class="tekst-wrap">
+        <textarea class="veld-tekst groot" id="edit-text" placeholder="Wat werd er gezegd of gedaan?">${esc(m.text || '')}</textarea>
+        ${svg('i-edit', 'tekst-potlood')}
+      </div>
       ${childSelectHTML(m.childId)}
       ${catSelectHTML(m.categoryId)}
-      <div class="datum-rij"><input type="date" id="edit-date" class="datum-chip" value="${date}"></div>
+      ${datumRijHTML('edit', date, m)}
       <div class="btn-stack">
         <button class="btn" id="edit-save">${svg('i-check')}Opslaan</button>
         <button class="btn btn-secondary" id="edit-cancel">Annuleren</button>
       </div>
     `);
-    bindCatSelect(); bindChildSelect();
+    bindCatSelect(); bindChildSelect(); bindDatumRij('edit');
     $('#edit-cancel').addEventListener('click', closeSheet);
     $('#edit-save').addEventListener('click', async () => {
       m.title = $('#edit-title').value.trim() || m.title;
       m.text = $('#edit-text').value.trim();
       m.categoryId = selectedCat();
       m.childId = selectedChild() || m.childId;
-      // Datum aanpasbaar, het oorspronkelijke tijdstip reist stilletjes mee
-      const when = new Date(`${$('#edit-date').value}T${time}`);
-      if (!isNaN(when)) m.date = when.toISOString();
+      // Datum aanpasbaar; bij een precieze dag reist het oorspronkelijke
+      // tijdstip stilletjes mee, bij 'ongeveer' telt alleen maand/seizoen
+      const ongeveer = leesApproxDatum('edit');
+      if (ongeveer) { m.date = ongeveer.when.toISOString(); m.approx = ongeveer.approx; }
+      else {
+        const when = new Date(`${$('#edit-date').value}T${time}`);
+        if (!isNaN(when)) m.date = when.toISOString();
+        delete m.approx;
+      }
       await DB.put('memories', m);
       await loadAll();
       closeSheet();
@@ -839,7 +943,7 @@
 
   // ============ Categorie bewerken ============
   // Alleen tinten die aan echte bladeren voorkomen — geen kerstboomkleuren
-  const CAT_KLEUREN = ['#D9899B', '#C0764C', '#7FA95B', '#B85C4A', '#D9A441', '#5E8E4E', '#96BA6B', '#8E9E5A'];
+  const CAT_KLEUREN = ['#DBA63F', '#8A5A62', '#7FA95B', '#B85C4A', '#5E8E4E', '#96BA6B', '#8E9E5A', '#C0764C'];
   function openCatForm(cat) {
     if (!cat) return;
     openSheet(`
@@ -931,7 +1035,7 @@
             <span class="grow">
               <span class="m-titel">${esc(m.title)}</span>
               ${m.text ? `<span class="m-tekst">${esc(m.text)}</span>` : ''}
-              <span class="m-sub">${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}${m.audioDuration ? ` · ${fmtTime(m.audioDuration)}` : ''}</span>
+              <span class="m-sub">${m.approx ? fmtWhen(m) : `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`}${m.audioDuration ? ` · ${fmtTime(m.audioDuration)}` : ''}</span>
             </span>
           </button>`;
       }
@@ -1055,7 +1159,7 @@
         <p class="settings-label">Over</p>
         <div class="settings-card">
           <div class="settings-row" style="cursor:default">
-            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.4 · elk blaadje één herinnering</span></span>
+            ${svg('i-leafcat')}<span class="grow">Momentjes — Het bos<span class="sub">Versie 2.5 · elk blaadje één herinnering</span></span>
           </div>
         </div>
       </div>
@@ -1131,9 +1235,29 @@
     const ob = $('#onboarding');
     ob.hidden = false;
     $('#onboarding-inner').innerHTML = `
-      <div class="ob-zon">${svg('i-mic')}</div>
+      <!-- Het punt van de app in één doorlopende animatie:
+           iets kleins & grappigs → één tik op de zon → een blaadje erbij -->
+      <svg class="ob-scene" viewBox="0 0 280 150" aria-hidden="true">
+        <g class="ob-beat ob-b1">
+          <rect x="30" y="34" width="176" height="52" rx="16" fill="#FDF8EE" stroke="rgba(84,69,47,0.14)"/>
+          <path d="M62 86 l-8 14 l20 -14 Z" fill="#FDF8EE"/>
+          <text x="118" y="56" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">“mama, dromen schapen</text>
+          <text x="118" y="74" text-anchor="middle" font-size="12.5" font-style="italic" fill="#54452F" font-family="ui-serif,Georgia,serif">eigenlijk over ons?”</text>
+        </g>
+        <g class="ob-beat ob-b2">
+          <circle cx="140" cy="66" r="30" fill="#F0A45A"/>
+          <circle cx="140" cy="66" r="30" fill="none" stroke="#F0A45A" class="ob-tik"/>
+          <path d="M140 54 a7 7 0 0 1 7 7 v6 a7 7 0 0 1 -14 0 v-6 a7 7 0 0 1 7 -7 Z M128 67 a12 12 0 0 0 24 0 M140 79 v5" fill="none" stroke="rgba(122,74,24,0.5)" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+        <g class="ob-beat ob-b3">
+          <path d="M140 128 C 138 104 144 84 140 60" fill="none" stroke="#8A6F52" stroke-width="6" stroke-linecap="round"/>
+          <path d="M139 92 C 122 82 110 74 102 58" fill="none" stroke="#8A6F52" stroke-width="3.6" stroke-linecap="round"/>
+          <ellipse cx="102" cy="54" rx="11" ry="7" fill="#96BA6B" transform="rotate(-22 102 54)"/>
+          <ellipse class="ob-nieuwblad" cx="140" cy="52" rx="11" ry="7" fill="#DBA63F" transform="rotate(-6 140 52)"/>
+        </g>
+      </svg>
       <h1 class="ob-title">Momentjes</h1>
-      <p class="ob-lead">De grappige uitspraken en kleine wonderen van je kind — als blaadjes aan een boom die met ze meegroeit. Alles blijft privé op jouw telefoon.</p>
+      <p class="ob-lead">Voor de kleine dingen die je anders vergeet — hun gekke vragen, hun woordjes, hun logica. Twintig seconden inspreken, en door met je dag. Alles blijft privé op jouw telefoon.</p>
       <div class="field"><label>Naam van je kind</label><input type="text" id="ob-naam" placeholder="Bijv. Sam" autocomplete="off"></div>
       <div class="field"><label>Geboortedatum <span style="text-transform:none;font-weight:400">(mag leeg)</span></label><input type="date" id="ob-geboren"></div>
       <div class="field"><label>Kleur</label><div class="color-row">
@@ -1170,7 +1294,9 @@
      tinten. Alleen exacte oude defaults worden vervangen — eigen keuzes
      blijven staan. */
   async function migrateCatColors() {
-    const map = { '#4D99E6': '#D9899B', '#E6992D': '#C0764C', '#66BB6A': '#7FA95B', '#E6667F': '#B85C4A' };
+    // Oker (geel blad) · koperbeuk (paarsbruin) · loof · roest — echt én onderscheidbaar
+    const map = { '#4D99E6': '#DBA63F', '#E6992D': '#8A5A62', '#66BB6A': '#7FA95B', '#E6667F': '#B85C4A',
+                  '#D9899B': '#DBA63F', '#C0764C': '#8A5A62' };
     for (const c of await DB.getAll('categories')) {
       if (map[c.color]) { c.color = map[c.color]; await DB.put('categories', c); }
     }
@@ -1187,5 +1313,5 @@
 
   init();
 
-  if (location.hostname === 'localhost') window.__test = { openSaveSheet, openBoom, openBlad, renderBos };
+  if (location.hostname === 'localhost') window.__test = { openSaveSheet, openBoom, openBlad, renderBos, nieuweVonk, openEdit };
 })();

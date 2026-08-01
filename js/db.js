@@ -83,8 +83,8 @@ const DB = (() => {
      (bloesem, koper, loof, roest) — zodat een boom in categorie-
      kleurmodus geen kerstboom wordt maar een gemengde boom. */
   const DEFAULT_CATEGORIES = [
-    { id: 'cat-uitspraak', name: 'Uitspraak', icon: 'quote',    color: '#D9899B', sortOrder: 0, isDefault: true },
-    { id: 'cat-vraag',     name: 'Vraag',     icon: 'question', color: '#C0764C', sortOrder: 1, isDefault: true },
+    { id: 'cat-uitspraak', name: 'Uitspraak', icon: 'quote',    color: '#DBA63F', sortOrder: 0, isDefault: true },
+    { id: 'cat-vraag',     name: 'Vraag',     icon: 'question', color: '#8A5A62', sortOrder: 1, isDefault: true },
     { id: 'cat-ervaring',  name: 'Ervaring',  icon: 'leaf',     color: '#7FA95B', sortOrder: 2, isDefault: true },
     { id: 'cat-mijlpaal',  name: 'Mijlpaal',  icon: 'flag',     color: '#B85C4A', sortOrder: 3, isDefault: true },
   ];

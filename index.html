@@ -131,11 +131,15 @@
         <span id="record-timer">0:00</span>
       </div>
       <div class="wave" id="wave" aria-hidden="true"></div>
-      <div class="live-transcript" id="live-transcript">
-        <p class="transcript-placeholder" id="transcript-placeholder">Vertel maar…</p>
-        <p id="transcript-text"></p>
+      <!-- Geen live meelezende tekst (dat praat niemand natuurlijk van) —
+           wel een vonkje: een vraag die je op verhaal helpt -->
+      <div class="vonk-zone">
+        <div class="vonk" id="vonk">
+          <p id="vonk-tekst"></p>
+          <button id="vonk-nieuw" aria-label="Andere vraag"><svg viewBox="0 0 24 24" class="icon"><path d="M19 12a7 7 0 1 1-2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17.2 3.6 17.4 7.4 13.6 7.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+        <p class="vonk-voetje">praat gewoon — de tekst verschijnt straks vanzelf</p>
       </div>
-      <p class="speech-note" id="speech-note" hidden>Live meeschrijven lukt hier niet — je opname wordt gewoon bewaard.</p>
       <div class="record-controls">
         <button class="ctrl-btn" id="record-cancel" aria-label="Annuleren"><svg class="icon"><use href="#i-close"/></svg></button>
         <button class="ctrl-btn ctrl-main" id="record-stop" aria-label="Klaar"><svg class="icon"><use href="#i-check"/></svg></button>
