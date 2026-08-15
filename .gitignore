@@ -1,3 +1,9 @@
 .DS_Store
 *.zip
 _test*
+
+# Plannen en besluiten blijven privé — nooit in deze publieke repo
+BESLISSINGEN.md
+CLAUDE.md
+PLAN.md
+VERDIENMODEL*
